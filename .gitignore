@@ -1,0 +1,53 @@
+# Android
+*.iml
+.gradle
+/local.properties
+/.idea/
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+
+# Kotlin
+*.class
+*.jar
+*.kt.swp
+
+# Build
+/app/build/
+*/build/
+
+# Local config
+*.properties
+!gradle/wrapper/gradle-wrapper.properties
+
+# Keystore (never commit)
+*.jks
+*.keystore
+
+# Secrets
+secrets.properties
+google-services.json
+
+# IDE
+*.iml
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python (if any scripts)
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+
+# Logs
+*.log

@@ -1,0 +1,150 @@
+# PRD: OpenCode Android Client
+
+> Product Requirements Document · Draft · Feb 2026
+
+## 元数据
+
+| 字段 | 值 |
+|------|------|
+| **产品名称** | OpenCode Android Client |
+| **状态** | Draft |
+| **创建日期** | 2026-02 |
+| **参考** | iOS Client PRD |
+
+---
+
+## 摘要
+
+OpenCode Android Client 是 OpenCode AI 编程助手的原生 Android 客户端，让开发者可以在手机/平板上远程监控 AI 工作进度、发送指令、审查代码变更。
+
+---
+
+## 背景
+
+### 问题
+
+开发者使用 OpenCode 时，常需在电脑前等待 AI 完成耗时任务。离开工位后无法及时了解进度、无法快速纠偏。现有 Web 客户端移动端体验不佳，TUI 无法在手机上使用。
+
+### 目标
+
+提供原生 Android 客户端，让用户可在手机/平板上：
+- 监控 AI 工作进度
+- 发送消息、切换模型、选择 Agent
+- 查看 Markdown diff、代码变更
+- 必要时中止或排队新指令
+
+### 目标用户
+
+- 使用 OpenCode 进行日常开发的程序员
+- 需要远程监控长时间运行任务的场景
+- Android 手机/平板用户
+
+---
+
+## 功能需求
+
+### 3.1 核心功能
+
+#### Chat Tab
+
+- **Session 管理**：列出所有 Session，创建/切换/重命名
+- **消息发送**：支持多行输入，busy 时服务端排队
+- **消息渲染**：
+  - 用户消息：灰色背景，支持文字选择
+  - AI 消息：Markdown 渲染，支持文字选择
+  - 思考过程（reasoning）：折叠展示
+  - 工具调用（tool）：卡片形式，running 时展开、completed 时收起
+  - Patch：显示文件路径，点击可跳转预览
+  - Todo：在 tool 卡片内展示任务列表
+- **流式显示**：支持 delta 增量更新，打字机效果
+- **模型选择**：Opus 4.6 / Sonnet 4.6 / GPT-5.3 Codex / GPT-5.2 / Gemini 3.1 Pro / Gemini 3 Flash
+- **Agent 选择**：从 `/agent` API 动态获取
+- **Context Usage**：环形进度显示上下文占用
+- **权限审批**：手动批准/拒绝 permission 请求
+- **Abort**：中止当前任务
+
+#### Files Tab
+
+- **文件树**：递归展示工作目录，支持 git 状态颜色标记
+- **文件预览**：文本文件语法高亮，Markdown 渲染
+- **Session 变更**：显示当前 Session 修改的文件列表
+
+#### Settings Tab
+
+- **服务器连接**：配置 URL（HTTP/HTTPS）、Basic Auth
+- **连接测试**：验证服务器可达性
+- **SSH Tunnel**（可选）：远程访问配置
+- **主题**：Light / Dark / System
+- **语音输入**：配置 AI Builder 转写服务
+
+### 3.2 平板适配
+
+- **手机**：底部 Tab 导航（Chat / Files / Settings）
+- **平板**：三栏布局（NavigationDrawer）
+  - 左：Workspace（Files + Sessions）
+  - 中：文件预览
+  - 右：Chat
+
+---
+
+## 技术约束
+
+| 约束 | 说明 |
+|------|------|
+| 最低版本 | Android 8.0 (API 26) |
+| 网络协议 | HTTP REST + SSE（Server-Sent Events） |
+| 安全 | HTTPS 用于公网，HTTP 允许用于局域网（需配置 network_security_config） |
+| 无本地 AI | 不引入本地推理、文件系统操作、shell 能力 |
+
+---
+
+## 非功能需求
+
+| 指标 | 要求 |
+|------|------|
+| 首屏加载 | < 3 秒（弱网） |
+| 消息延迟 | SSE 事件 < 500ms 渲染 |
+| 电池消耗 | 后台不保持连接，前台正常耗电 |
+| 离线支持 | 断线时显示缓存内容，不崩溃 |
+
+---
+
+## 与 iOS 版本的差异
+
+| 功能 | iOS | Android | 说明 |
+|------|-----|---------|------|
+| HTTP 连接 | 需配置 ATS | 需配置 network_security_config | 两者都允许 HTTP |
+| SSH Tunnel | Citadel (SwiftNIO) | Apache Mina SSHD / JSch | 库不同，功能一致 |
+| UI 框架 | SwiftUI | Jetpack Compose | 声明式，概念相似 |
+| 状态管理 | @Observable | ViewModel + StateFlow | 架构相似 |
+| 安全存储 | Keychain | Keystore + EncryptedSharedPreferences | 功能等价 |
+
+---
+
+## 实现规划
+
+| Phase | 范围 | 预计周期 |
+|-------|------|----------|
+| 1 | 项目搭建、网络层、SSE、Session、消息发送、流式渲染 | 2-3 周 |
+| 2 | Part 渲染、权限审批、主题、语音输入 | 1-2 周 |
+| 3 | 文件树、Markdown 预览、Diff、平板布局 | 2 周 |
+| 4 | SSH Tunnel（可选） | 1 周 |
+
+**总体：6-8 周**
+
+---
+
+## 成功指标
+
+1. 能够稳定连接 OpenCode Server（局域网/公网）
+2. 消息发送、接收、流式显示正常
+3. 权限审批流程完整
+4. 文件预览、Markdown 渲染可用
+5. 平板三栏布局体验流畅
+
+---
+
+## 参考
+
+- [OpenCode Web API](../../../adhoc_jobs/opencode_ios_client/docs/OpenCode_Web_API.md)
+- [iOS Client RFC](../../../adhoc_jobs/opencode_ios_client/docs/OpenCode_iOS_Client_RFC.md)

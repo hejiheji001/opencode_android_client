@@ -1,0 +1,290 @@
+package com.yage.opencode_client.ui.settings
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.unit.dp
+import com.yage.opencode_client.ui.MainViewModel
+import com.yage.opencode_client.util.SettingsManager
+import com.yage.opencode_client.util.ThemeMode
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SettingsScreen(
+    viewModel: MainViewModel = hiltViewModel()
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+
+    var serverUrl by remember { mutableStateOf("") }
+    var username by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var showPassword by remember { mutableStateOf(false) }
+    var isTesting by remember { mutableStateOf(false) }
+    var testResult by remember { mutableStateOf<TestResult?>(null) }
+
+    LaunchedEffect(Unit) {
+        // Initialize with current settings
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp)
+    ) {
+        Text(
+            "Server Connection",
+            style = MaterialTheme.typography.titleMedium
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        OutlinedTextField(
+            value = serverUrl,
+            onValueChange = {
+                serverUrl = it
+                testResult = null
+            },
+            label = { Text("Server URL") },
+            placeholder = { Text("http://192.168.1.100:4096") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            leadingIcon = {
+                Icon(Icons.Default.Cloud, contentDescription = null)
+            }
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        OutlinedTextField(
+            value = username,
+            onValueChange = {
+                username = it
+                testResult = null
+            },
+            label = { Text("Username (optional)") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            leadingIcon = {
+                Icon(Icons.Default.Person, contentDescription = null)
+            }
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        OutlinedTextField(
+            value = password,
+            onValueChange = {
+                password = it
+                testResult = null
+            },
+            label = { Text("Password (optional)") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+            trailingIcon = {
+                IconButton(onClick = { showPassword = !showPassword }) {
+                    Icon(
+                        if (showPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                        contentDescription = if (showPassword) "Hide password" else "Show password"
+                    )
+                }
+            },
+            leadingIcon = {
+                Icon(Icons.Default.Lock, contentDescription = null)
+            }
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Button(
+                onClick = {
+                    isTesting = true
+                    viewModel.configureServer(
+                        url = serverUrl,
+                        username = username.ifBlank { null },
+                        password = password.ifBlank { null }
+                    )
+                    // Test connection
+                },
+                enabled = serverUrl.isNotBlank() && !isTesting
+            ) {
+                if (isTesting) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        strokeWidth = 2.dp
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+                Text("Test Connection")
+            }
+
+            OutlinedButton(
+                onClick = {
+                    viewModel.configureServer(
+                        url = serverUrl,
+                        username = username.ifBlank { null },
+                        password = password.ifBlank { null }
+                    )
+                },
+                enabled = serverUrl.isNotBlank()
+            ) {
+                Text("Save")
+            }
+        }
+
+        testResult?.let { result ->
+            Spacer(modifier = Modifier.height(12.dp))
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = if (result.success)
+                        MaterialTheme.colorScheme.primaryContainer
+                    else
+                        MaterialTheme.colorScheme.errorContainer
+                )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        if (result.success) Icons.Default.Check else Icons.Default.Error,
+                        contentDescription = null,
+                        tint = if (result.success)
+                            MaterialTheme.colorScheme.onPrimaryContainer
+                        else
+                            MaterialTheme.colorScheme.onErrorContainer
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        result.message,
+                        color = if (result.success)
+                            MaterialTheme.colorScheme.onPrimaryContainer
+                        else
+                            MaterialTheme.colorScheme.onErrorContainer
+                    )
+                }
+            }
+        }
+
+        if (state.isConnected) {
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Default.CheckCircle,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    "Connected",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                state.serverVersion?.let { version ->
+                    Text(
+                        " (v$version)",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        HorizontalDivider()
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        Text(
+            "Appearance",
+            style = MaterialTheme.typography.titleMedium
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        var selectedTheme by remember { mutableStateOf(ThemeMode.SYSTEM) }
+
+        Column {
+            ThemeMode.values().forEach { mode ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    RadioButton(
+                        selected = selectedTheme == mode,
+                        onClick = { selectedTheme = mode }
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        when (mode) {
+                            ThemeMode.LIGHT -> "Light"
+                            ThemeMode.DARK -> "Dark"
+                            ThemeMode.SYSTEM -> "System default"
+                        }
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        HorizontalDivider()
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        Text(
+            "About",
+            style = MaterialTheme.typography.titleMedium
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            "OpenCode Android Client",
+            style = MaterialTheme.typography.bodyLarge
+        )
+        Text(
+            "Version 1.0",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.outline
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            "A native Android client for OpenCode AI coding agent.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.outline
+        )
+    }
+}
+
+private data class TestResult(
+    val success: Boolean,
+    val message: String
+)
