@@ -1,0 +1,13 @@
+# AGENTS.md - opencode_android_client
+
+## Build Environment
+
+终端默认可能找不到 Java，导致 `./gradlew` 失败。使用 Android Studio 自带的 JDK：
+
+```bash
+export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
+export PATH="$JAVA_HOME/bin:$PATH"
+./gradlew assembleDebug
+```
+
+**持久化**：在 `~/.zshrc` 中加入上述 `JAVA_HOME` 和 `PATH` 两行，然后 `source ~/.zshrc`。

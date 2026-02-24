@@ -56,3 +56,27 @@
 ### Tests
 - Created ModelTests with serialization and model logic tests (ModelTests.kt)
 - Created AppStateTest with state management tests (AppStateTest.kt)
+
+---
+
+## 2026-02-24
+
+### Build Fixes
+- Migrated kapt → KSP for AGP 9 built-in Kotlin compatibility
+- Upgraded KSP to 2.3.6 for kotlin.sourceSets DSL fix
+- Fixed MainActivity icons (FolderOutlined/SettingsOutlined → Folder/Settings)
+- Fixed Message.kt SerialDescriptor and booleanOrNull
+- Fixed Permission.kt SerialName import
+- Fixed Session.kt isRetry getter syntax
+- Fixed OpenCodeRepository Retrofit converter import
+- Added material-icons-extended dependency
+- Renamed OpenCodeTheme in Theme.kt
+
+### AGENTS.md
+- Created AGENTS.md with Android Studio JDK build instructions
+
+### Next: Test Coverage & Integration Tests
+- [ ] Add Kover for unit test coverage
+- [ ] Add .env for integration test credentials (localhost:4096, opencode/restart_Web@)
+- [ ] Implement dynamic credential loading (no hardcoding)
+- [ ] Add integration tests against real server

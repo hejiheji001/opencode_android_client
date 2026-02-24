@@ -29,6 +29,7 @@
 # Secrets
 secrets.properties
 google-services.json
+.env
 
 # IDE
 *.iml
