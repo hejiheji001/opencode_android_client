@@ -23,6 +23,7 @@ import com.yage.opencode_client.data.model.*
 import com.yage.opencode_client.ui.AppState
 import com.yage.opencode_client.ui.MainViewModel
 import androidx.compose.foundation.isSystemInDarkTheme
+import com.yage.opencode_client.ui.theme.markdownTypographyCompact
 import com.yage.opencode_client.ui.theme.ToolWritePatchBackground
 import com.yage.opencode_client.ui.theme.ToolWritePatchBackgroundDark
 import com.yage.opencode_client.ui.theme.UserMessageBackground
@@ -540,6 +541,7 @@ private fun TextPart(
     } else {
         Markdown(
             content = text,
+            typography = markdownTypographyCompact(),
             modifier = innerModifier
         )
     }
@@ -598,6 +600,7 @@ private fun ReasoningCard(
             if ((expanded || isStreaming) && text.isNotBlank()) {
                 Markdown(
                     content = text,
+                    typography = markdownTypographyCompact(),
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
                 )
             }

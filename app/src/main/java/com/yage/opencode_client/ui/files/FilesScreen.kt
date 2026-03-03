@@ -17,6 +17,7 @@ import com.mikepenz.markdown.m3.Markdown
 import com.yage.opencode_client.data.model.FileNode
 import com.yage.opencode_client.data.model.FileStatusEntry
 import com.yage.opencode_client.data.repository.OpenCodeRepository
+import com.yage.opencode_client.ui.theme.markdownTypographyCompact
 import com.yage.opencode_client.ui.theme.ModifiedFile
 import com.yage.opencode_client.ui.theme.AddedFile
 import com.yage.opencode_client.ui.theme.DeletedFile
@@ -293,7 +294,11 @@ private fun FileContentViewer(
                 contentPadding = PaddingValues(16.dp)
             ) {
                 item {
-                    Markdown(content = content, modifier = Modifier.fillMaxWidth())
+                    Markdown(
+                        content = content,
+                        typography = markdownTypographyCompact(),
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
             }
         } else {

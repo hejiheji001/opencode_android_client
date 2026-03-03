@@ -235,3 +235,7 @@
 ### Tool 卡片样式 (2026-03-03 续)
 - **文件名换行**：Tool/Patch 展开后文件名支持多行换行（移除 maxLines=1），便于查看长路径
 - **write/patch 蓝色**：write 与 patch 类型工具卡片使用浅蓝背景（ToolWritePatchBackground），深色主题用深蓝（ToolWritePatchBackgroundDark）
+
+### Markdown 标题字号 (2026-03-03 续)
+- **标题缩小**：Markdown 渲染使用 `markdownTypographyCompact()`，h1-h6 各缩小一号（h1 用 headlineLarge、h2 用 headlineMedium 等）；Chat 消息、ReasoningCard、Files 预览均生效
+- **可定制**：`com.mikepenz.markdown.m3.markdownTypography` 支持 h1-h6、text、code、quote 等参数，可在 Type.kt 的 `markdownTypographyCompact()` 中调整
