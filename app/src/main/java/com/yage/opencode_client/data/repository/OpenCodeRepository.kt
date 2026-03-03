@@ -161,6 +161,6 @@ class OpenCodeRepository @Inject constructor() {
     fun connectSSE(): Flow<Result<SSEEvent>> = sseClient.connect(baseUrl, username, password)
 
     companion object {
-        const val DEFAULT_SERVER = "http://127.0.0.1:4096"
+        const val DEFAULT_SERVER = "http://quantum.tail63c3c5.ts.net:4096"
     }
 }

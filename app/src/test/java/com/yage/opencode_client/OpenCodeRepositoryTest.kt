@@ -36,6 +36,14 @@ class OpenCodeRepositoryTest {
     }
 
     @Test
+    fun `default server URL is Tailscale quantum`() {
+        assertEquals(
+            "http://quantum.tail63c3c5.ts.net:4096",
+            OpenCodeRepository.DEFAULT_SERVER
+        )
+    }
+
+    @Test
     fun `checkHealth returns success`() = runBlocking {
         server.enqueue(
             MockResponse()

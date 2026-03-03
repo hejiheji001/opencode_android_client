@@ -171,3 +171,8 @@
 - **Settings 入口**：Chat TopBar 右侧添加齿轮图标，点击可进入 Settings（解决 Fold 平板布局下底部导航栏不可见、Connect/Settings 点击无反应的问题）
 - **Connect 按钮**：增大触摸区域（`minimumInteractiveComponentSize` + padding），提升大屏设备可点性
 - **TabletLayout**：hoist `showSettings` 状态，支持从 Chat 面板直接打开 Settings
+
+### 默认服务器
+- 默认 Server URL 改为 `http://quantum.tail63c3c5.ts.net:4096`（Tailscale MagicDNS）
+- 更新 SettingsManager、OpenCodeRepository、SettingsScreen placeholder
+- 新增单元测试：`default server URL is Tailscale quantum`
