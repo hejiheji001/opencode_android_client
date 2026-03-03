@@ -16,9 +16,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
+import com.mikepenz.markdown.m3.Markdown
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.mikepenz.markdown.m3.Markdown
 import com.yage.opencode_client.data.model.*
 import com.yage.opencode_client.ui.AppState
 import com.yage.opencode_client.ui.MainViewModel
@@ -496,11 +496,9 @@ private fun ReasoningCard(
                 }
             }
             if (expanded && text.isNotBlank()) {
-                Text(
-                    text = text,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                    style = MaterialTheme.typography.bodySmall,
-                    fontFamily = FontFamily.Monospace
+                Markdown(
+                    content = text,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
                 )
             }
         }
@@ -612,15 +610,26 @@ private fun ToolCard(
                 }
 
                 filePaths.forEach { path ->
-                    TextButton(
-                        onClick = { onFileClick(path) },
-                        contentPadding = PaddingValues(0.dp)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
                             path,
                             style = MaterialTheme.typography.bodySmall,
-                            fontFamily = FontFamily.Monospace
+                            fontFamily = FontFamily.Monospace,
+                            modifier = Modifier.weight(1f)
                         )
+                        IconButton(
+                            onClick = { onFileClick(path) },
+                            modifier = Modifier.size(28.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.OpenInNew,
+                                contentDescription = "Show in Files",
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -653,15 +662,26 @@ private fun PatchCard(
             }
             Spacer(modifier = Modifier.height(8.dp))
             filePaths.forEach { path ->
-                TextButton(
-                    onClick = { onFileClick(path) },
-                    contentPadding = PaddingValues(0.dp)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
                         path,
                         style = MaterialTheme.typography.bodySmall,
-                        fontFamily = FontFamily.Monospace
+                        fontFamily = FontFamily.Monospace,
+                        modifier = Modifier.weight(1f)
                     )
+                    IconButton(
+                        onClick = { onFileClick(path) },
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.OpenInNew,
+                            contentDescription = "Show in Files",
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                 }
             }
         }

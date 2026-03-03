@@ -29,6 +29,13 @@ class AppStateTest {
         assertEquals("", state.inputText)
         assertNull(state.error)
         assertEquals(ThemeMode.SYSTEM, state.themeMode)
+        assertNull(state.filePathToShowInFiles)
+    }
+
+    @Test
+    fun `filePathToShowInFiles can be set and read`() {
+        val state = AppState(filePathToShowInFiles = "src/main.kt")
+        assertEquals("src/main.kt", state.filePathToShowInFiles)
     }
     
     @Test

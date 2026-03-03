@@ -22,7 +22,7 @@ plugins {
 
 android {
     namespace = "com.yage.opencode_client"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.yage.opencode_client"

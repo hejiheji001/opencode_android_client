@@ -36,7 +36,8 @@ data class AppState(
     val pendingPermissions: List<PermissionRequest> = emptyList(),
     val inputText: String = "",
     val error: String? = null,
-    val themeMode: ThemeMode = ThemeMode.SYSTEM
+    val themeMode: ThemeMode = ThemeMode.SYSTEM,
+    val filePathToShowInFiles: String? = null
 ) {
     data class ModelOption(val displayName: String, val providerId: String, val modelId: String)
 
@@ -363,6 +364,14 @@ class MainViewModel @Inject constructor(
 
     fun clearError() {
         _state.update { it.copy(error = null) }
+    }
+
+    fun showFileInFiles(path: String) {
+        _state.update { it.copy(filePathToShowInFiles = path) }
+    }
+
+    fun clearFileToShow() {
+        _state.update { it.copy(filePathToShowInFiles = null) }
     }
 
     private fun startSSE() {

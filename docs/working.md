@@ -202,3 +202,15 @@
 - **Chat TopBar 下拉**：Model/Agent/Session 的 IconButton+DropdownMenu 用 Box 包裹，修复 iPad 上定位
 - **平板布局**：移除 TabRow，左栏默认 SessionList，header 增加 Settings 图标；SettingsScreen 支持 onBack 显示返回按钮
 - **Chat 标题**：titleSmall + maxLines=1 + Ellipsis，长标题省略；平板隐藏 Settings 按钮（左栏已有）
+
+### Markdown 与依赖 (2026-03-03 续)
+- **Compose BOM**：升级至 2025.12.00（含 runtime 1.10.0），修复 markdown-renderer 0.39.0 的 NoSuchMethodError
+- **compileSdk**：34 → 35（runtime 1.10.0 要求）
+- **ReasoningCard**：恢复 Markdown 渲染
+
+### Session 列表与 Patch 改进 (2026-03-03 续)
+- **Session 列表**：交替背景色（一明一暗）、分割线、分页显示（首屏 20 条，滚动到底部动态加载更多）
+- **Patch/Tool 文件**：每个文件路径右侧添加「Show in Files」按钮，点击后在 Files 面板直接显示该文件内容
+- **AppState**：新增 `filePathToShowInFiles`，MainViewModel 新增 `showFileInFiles()` / `clearFileToShow()`
+- **FilesScreen**：支持 `pathToShow` 与 `onCloseFile` 参数，可从 Chat 面板跳转并展示指定文件
+- **测试**：AppStateTest 新增 filePathToShowInFiles 默认值与读写；ModelTests 新增 Part.filePathsForNavigation 测试

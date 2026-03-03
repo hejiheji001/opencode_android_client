@@ -115,6 +115,29 @@ class ModelTests {
     }
 
     @Test
+    fun `Part filePathsForNavigation from files`() {
+        val part = Part(
+            id = "p1",
+            type = "patch",
+            files = listOf(
+                Part.FileChange(path = "src/main.kt"),
+                Part.FileChange(path = "app/build.gradle.kts")
+            )
+        )
+        assertEquals(listOf("src/main.kt", "app/build.gradle.kts"), part.filePathsForNavigation)
+    }
+
+    @Test
+    fun `Part filePathsForNavigation from metadata path`() {
+        val part = Part(
+            id = "p1",
+            type = "patch",
+            metadata = PartMetadata(path = "README.md")
+        )
+        assertEquals(listOf("README.md"), part.filePathsForNavigation)
+    }
+
+    @Test
     fun `AgentInfo visibility checks`() {
         val primaryAgent = AgentInfo(
             name = "Sisyphus",

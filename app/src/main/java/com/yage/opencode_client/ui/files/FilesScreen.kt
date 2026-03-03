@@ -26,6 +26,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun FilesScreen(
     repository: OpenCodeRepository,
+    pathToShow: String? = null,
+    onCloseFile: () -> Unit = {},
     onFileClick: (String) -> Unit = {}
 ) {
     var currentPath by remember { mutableStateOf("") }
@@ -37,6 +39,20 @@ fun FilesScreen(
     var error by remember { mutableStateOf<String?>(null) }
 
     val scope = rememberCoroutineScope()
+
+    LaunchedEffect(pathToShow) {
+        if (pathToShow == null) {
+            selectedFilePath = null
+            selectedFileContent = null
+        } else {
+            repository.getFileContent(pathToShow)
+                .onSuccess { content ->
+                    selectedFileContent = content.text
+                    selectedFilePath = pathToShow
+                }
+                .onFailure { error = it.message }
+        }
+    }
 
     fun loadFiles(path: String) {
         scope.launch {
@@ -124,6 +140,7 @@ fun FilesScreen(
                 onClose = {
                     selectedFilePath = null
                     selectedFileContent = null
+                    onCloseFile()
                 }
             )
         } else {

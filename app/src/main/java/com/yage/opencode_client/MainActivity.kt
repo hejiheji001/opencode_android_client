@@ -4,11 +4,13 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Folder
@@ -21,6 +23,7 @@ import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSiz
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.*
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
@@ -103,7 +106,7 @@ class MainActivity : ComponentActivity() {
                 if (isTablet) {
                     TabletLayout(viewModel = viewModel, repository = repository)
                 } else {
-                    PhoneLayout(repository = repository)
+                    PhoneLayout(viewModel = viewModel, repository = repository)
                 }
             }
         }
@@ -111,7 +114,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun PhoneLayout(repository: OpenCodeRepository) {
+private fun PhoneLayout(viewModel: MainViewModel, repository: OpenCodeRepository) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
@@ -154,6 +157,7 @@ private fun PhoneLayout(repository: OpenCodeRepository) {
             composable(Screen.Chat.route) {
                 ChatScreen(
                     onNavigateToFiles = { path ->
+                        viewModel.showFileInFiles(path)
                         navController.navigate(Screen.Files.route)
                     },
                     onNavigateToSettings = {
@@ -162,11 +166,12 @@ private fun PhoneLayout(repository: OpenCodeRepository) {
                 )
             }
             composable(Screen.Files.route) {
+                val state by viewModel.state.collectAsStateWithLifecycle()
                 FilesScreen(
                     repository = repository,
-                    onFileClick = { path ->
-                        // Could show file in a viewer or do nothing
-                    }
+                    pathToShow = state.filePathToShowInFiles,
+                    onCloseFile = { viewModel.clearFileToShow() },
+                    onFileClick = { }
                 )
             }
             composable(Screen.Settings.route) {
@@ -215,9 +220,9 @@ private fun TabletLayout(viewModel: MainViewModel, repository: OpenCodeRepositor
         ) {
             FilesScreen(
                 repository = repository,
-                onFileClick = { path ->
-                    // Could show file in a viewer or do nothing
-                }
+                pathToShow = state.filePathToShowInFiles,
+                onCloseFile = { viewModel.clearFileToShow() },
+                onFileClick = { }
             )
         }
 
@@ -230,13 +235,17 @@ private fun TabletLayout(viewModel: MainViewModel, repository: OpenCodeRepositor
                 .fillMaxHeight()
         ) {
             ChatScreen(
-                onNavigateToFiles = { },
+                onNavigateToFiles = { path ->
+                    viewModel.showFileInFiles(path)
+                },
                 onNavigateToSettings = onOpenSettings,
                 showSettingsButton = false
             )
         }
     }
 }
+
+private const val SESSION_PAGE_SIZE = 20
 
 @Composable
 private fun SessionList(
@@ -246,6 +255,20 @@ private fun SessionList(
     onCreateSession: () -> Unit,
     onOpenSettings: (() -> Unit)? = null
 ) {
+    var displayedCount by remember { mutableStateOf(SESSION_PAGE_SIZE) }
+    val sessionsToShow = sessions.take(displayedCount)
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(listState) {
+        snapshotFlow {
+            listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+        }.collect { lastVisible ->
+            if (lastVisible >= sessionsToShow.size - 2 && sessionsToShow.size < sessions.size) {
+                displayedCount = (displayedCount + SESSION_PAGE_SIZE).coerceAtMost(sessions.size)
+            }
+        }
+    }
+
     Column(modifier = Modifier.fillMaxSize()) {
         Surface(
             modifier = Modifier.fillMaxWidth(),
@@ -274,24 +297,54 @@ private fun SessionList(
             }
         }
         LazyColumn(
+            state = listState,
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
         ) {
-            items(sessions, key = { it.id }) { session ->
+            itemsIndexed(sessionsToShow, key = { _, s -> s.id }) { index, session ->
                 val isSelected = session.id == currentSessionId
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onSelectSession(session.id) }
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = session.displayName,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                    )
+                val altBg = index % 2 == 1
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                if (altBg) MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.5f)
+                                else MaterialTheme.colorScheme.surface
+                            )
+                            .clickable { onSelectSession(session.id) }
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = session.displayName,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    if (index < sessionsToShow.size - 1) {
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = 12.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                        )
+                    }
+                }
+            }
+            if (sessionsToShow.size < sessions.size) {
+                item(key = "load_more") {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        contentAlignment = androidx.compose.ui.Alignment.Center
+                    ) {
+                        Text(
+                            "Loading more...",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                    }
                 }
             }
         }
