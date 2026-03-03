@@ -214,3 +214,9 @@
 - **AppState**：新增 `filePathToShowInFiles`，MainViewModel 新增 `showFileInFiles()` / `clearFileToShow()`
 - **FilesScreen**：支持 `pathToShow` 与 `onCloseFile` 参数，可从 Chat 面板跳转并展示指定文件
 - **测试**：AppStateTest 新增 filePathToShowInFiles 默认值与读写；ModelTests 新增 Part.filePathsForNavigation 测试
+
+### 待修复 (2026-03-03)
+- 工具/补丁内容更新缓慢
+- Patch 显示文件夹而非文件（需查 API 响应）
+- Files 面板加载文件内容为空
+- 手机模式：从 Chat 点 patch 跳 Files 后，底部 Tab 无法切回 Chat

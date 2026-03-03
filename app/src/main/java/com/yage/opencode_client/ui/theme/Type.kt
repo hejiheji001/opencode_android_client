@@ -6,6 +6,19 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
+/** Slightly smaller typography for Files and Chat columns in tablet layout. */
+fun compactTypography(base: Typography): Typography = base.copy(
+    bodyLarge = base.bodyLarge.copy(fontSize = 14.sp, lineHeight = 20.sp),
+    bodyMedium = base.bodyMedium.copy(fontSize = 12.sp, lineHeight = 18.sp),
+    bodySmall = base.bodySmall.copy(fontSize = 11.sp, lineHeight = 16.sp),
+    labelLarge = base.labelLarge.copy(fontSize = 12.sp, lineHeight = 16.sp),
+    labelMedium = base.labelMedium.copy(fontSize = 11.sp, lineHeight = 14.sp),
+    labelSmall = base.labelSmall.copy(fontSize = 10.sp, lineHeight = 14.sp),
+    titleLarge = base.titleLarge.copy(fontSize = 18.sp, lineHeight = 24.sp),
+    titleMedium = base.titleMedium.copy(fontSize = 16.sp, lineHeight = 22.sp),
+    titleSmall = base.titleSmall.copy(fontSize = 14.sp, lineHeight = 20.sp)
+)
+
 val Typography = Typography(
     bodyLarge = TextStyle(
         fontFamily = FontFamily.Default,

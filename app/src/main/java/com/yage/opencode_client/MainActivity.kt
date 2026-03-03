@@ -42,6 +42,7 @@ import com.yage.opencode_client.ui.chat.ChatScreen
 import com.yage.opencode_client.ui.files.FilesScreen
 import com.yage.opencode_client.ui.settings.SettingsScreen
 import com.yage.opencode_client.ui.theme.OpenCodeTheme
+import com.yage.opencode_client.ui.theme.compactTypography
 import com.yage.opencode_client.util.ThemeMode
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -156,13 +157,15 @@ private fun PhoneLayout(viewModel: MainViewModel, repository: OpenCodeRepository
         ) {
             composable(Screen.Chat.route) {
                 ChatScreen(
+                    viewModel = viewModel,
                     onNavigateToFiles = { path ->
                         viewModel.showFileInFiles(path)
                         navController.navigate(Screen.Files.route)
                     },
                     onNavigateToSettings = {
                         navController.navigate(Screen.Settings.route)
-                    }
+                    },
+                    showSettingsButton = false
                 )
             }
             composable(Screen.Files.route) {
@@ -218,12 +221,17 @@ private fun TabletLayout(viewModel: MainViewModel, repository: OpenCodeRepositor
                 .weight(0.375f)
                 .fillMaxHeight()
         ) {
-            FilesScreen(
+            MaterialTheme(
+                colorScheme = MaterialTheme.colorScheme,
+                typography = compactTypography(MaterialTheme.typography)
+            ) {
+                FilesScreen(
                 repository = repository,
                 pathToShow = state.filePathToShowInFiles,
                 onCloseFile = { viewModel.clearFileToShow() },
                 onFileClick = { }
             )
+            }
         }
 
         VerticalDivider()
@@ -234,13 +242,20 @@ private fun TabletLayout(viewModel: MainViewModel, repository: OpenCodeRepositor
                 .weight(0.375f)
                 .fillMaxHeight()
         ) {
-            ChatScreen(
-                onNavigateToFiles = { path ->
-                    viewModel.showFileInFiles(path)
-                },
-                onNavigateToSettings = onOpenSettings,
-                showSettingsButton = false
-            )
+            MaterialTheme(
+                colorScheme = MaterialTheme.colorScheme,
+                typography = compactTypography(MaterialTheme.typography)
+            ) {
+                ChatScreen(
+                    viewModel = viewModel,
+                    onNavigateToFiles = { path ->
+                        viewModel.showFileInFiles(path)
+                    },
+                    onNavigateToSettings = onOpenSettings,
+                    showSettingsButton = false,
+                    showNewSessionInTopBar = false
+                )
+            }
         }
     }
 }

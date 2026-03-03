@@ -30,7 +30,8 @@ fun ChatScreen(
     viewModel: MainViewModel = hiltViewModel(),
     onNavigateToFiles: (String) -> Unit = {},
     onNavigateToSettings: () -> Unit = {},
-    showSettingsButton: Boolean = true
+    showSettingsButton: Boolean = true,
+    showNewSessionInTopBar: Boolean = true
 ) {
     val state by viewModel.state.collectAsState()
 
@@ -50,7 +51,8 @@ fun ChatScreen(
             onSelectAgent = { viewModel.selectAgent(it) },
             onSelectModel = { viewModel.selectModel(it) },
             onNavigateToSettings = onNavigateToSettings,
-            showSettingsButton = showSettingsButton
+            showSettingsButton = showSettingsButton,
+            showNewSessionInTopBar = showNewSessionInTopBar
         )
 
         Box(modifier = Modifier.weight(1f)) {
@@ -119,7 +121,8 @@ private fun TopBar(
     onSelectAgent: (String) -> Unit,
     onSelectModel: (Int) -> Unit,
     onNavigateToSettings: () -> Unit = {},
-    showSettingsButton: Boolean = true
+    showSettingsButton: Boolean = true,
+    showNewSessionInTopBar: Boolean = true
 ) {
     var showSessionMenu by remember { mutableStateOf(false) }
     var showAgentMenu by remember { mutableStateOf(false) }
@@ -143,12 +146,18 @@ private fun TopBar(
 
             Box {
                 IconButton(onClick = { showModelMenu = true }) {
-                    Icon(Icons.Default.Tune, contentDescription = "Model")
+                    Icon(Icons.Default.Tune, contentDescription = "Switch LLM model")
                 }
                 DropdownMenu(
                     expanded = showModelMenu,
                     onDismissRequest = { showModelMenu = false }
                 ) {
+                    if (availableModels.isEmpty()) {
+                        DropdownMenuItem(
+                            text = { Text("No models", color = MaterialTheme.colorScheme.outline) },
+                            onClick = { }
+                        )
+                    }
                     availableModels.forEachIndexed { index, model ->
                         DropdownMenuItem(
                             text = {
@@ -177,6 +186,12 @@ private fun TopBar(
                     expanded = showAgentMenu,
                     onDismissRequest = { showAgentMenu = false }
                 ) {
+                    if (agents.isEmpty()) {
+                        DropdownMenuItem(
+                            text = { Text("No agents", color = MaterialTheme.colorScheme.outline) },
+                            onClick = { }
+                        )
+                    }
                     agents.forEach { agent ->
                         DropdownMenuItem(
                             text = { Text(agent.shortName) },
@@ -203,14 +218,16 @@ private fun TopBar(
                     expanded = showSessionMenu,
                     onDismissRequest = { showSessionMenu = false }
                 ) {
-                DropdownMenuItem(
-                    text = { Text("New Session") },
-                    onClick = {
-                        onCreateSession()
-                        showSessionMenu = false
-                    }
-                )
-                HorizontalDivider()
+                if (showNewSessionInTopBar) {
+                    DropdownMenuItem(
+                        text = { Text("New Session") },
+                        onClick = {
+                            onCreateSession()
+                            showSessionMenu = false
+                        }
+                    )
+                    HorizontalDivider()
+                }
                 sessions.forEach { session ->
                     DropdownMenuItem(
                         text = {
