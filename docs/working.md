@@ -251,6 +251,9 @@
 - **Scaffold contentWindowInsets**：PhoneLayout 添加 `WindowInsets.statusBars`，避免内容与状态栏重叠
 - **TabletLayout**：Row 添加 `windowInsetsPadding(WindowInsets.statusBars)`，Sessions 标题不再与状态栏重叠
 
+### Tool 卡片 Todo 展示 (2026-03-03 续)
+- **Todo 内容显示**：ToolCard 新增 todos 参数，展开时显示具体任务（content、status、priority）；已完成用勾选图标+删除线，未完成用空心圆；有 todos 时默认展开
+
 ### 状态更新与消息顺序 (2026-03-03 续)
 - **selectSession 清空**：切换 session 时立即清空 messages，避免短暂显示上一 session 内容
 - **loadMessagesWithRetry**：延迟 150ms→400ms；发送后增加 1.2s 二次加载

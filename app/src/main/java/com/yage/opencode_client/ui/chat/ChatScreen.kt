@@ -504,6 +504,7 @@ private fun PartView(
                 status = part.stateDisplay,
                 reason = part.toolReason,
                 filePaths = part.filePathsForNavigationFiltered,
+                todos = part.toolTodos,
                 onFileClick = onFileClick,
                 modifier = modifier
             )
@@ -614,11 +615,12 @@ private fun ToolCard(
     status: String?,
     reason: String?,
     filePaths: List<String>,
+    todos: List<com.yage.opencode_client.data.model.TodoItem> = emptyList(),
     onFileClick: (String) -> Unit,
     modifier: Modifier = Modifier.fillMaxWidth()
 ) {
     val isRunning = status == "running"
-    var expanded by remember { mutableStateOf(isRunning) }
+    var expanded by remember { mutableStateOf(isRunning || todos.isNotEmpty()) }
     val firstFile = filePaths.firstOrNull()
     val isWriteOrPatch = toolName == "write" || toolName == "patch" || toolName.contains("write")
     val writePatchColor = if (isSystemInDarkTheme()) ToolWritePatchBackgroundDark else ToolWritePatchBackground
@@ -677,6 +679,37 @@ private fun ToolCard(
                 }
             }
 
+            if (expanded && todos.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                todos.forEach { todo ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = if (todo.isCompleted) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = if (todo.isCompleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = todo.content,
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                textDecoration = if (todo.isCompleted) androidx.compose.ui.text.style.TextDecoration.LineThrough else null
+                            ),
+                            modifier = Modifier.weight(1f)
+                        )
+                        if (todo.priority != "medium") {
+                            Text(
+                                text = todo.priority,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.outline
+                            )
+                        }
+                    }
+                }
+            }
             if (expanded && filePaths.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(8.dp))
                 filePaths.forEach { path ->

@@ -336,6 +336,26 @@ class ModelTests {
     }
 
     @Test
+    fun `tool part extracts todos from state input`() {
+        val apiJson = """
+            [{"info":{"id":"msg_1","role":"assistant","sessionID":"ses_1"},"parts":[{
+            "type":"tool","id":"prt_1","sessionID":"ses_1","messageID":"msg_1","tool":"plan",
+            "state":{"status":"completed","input":{"todos":[
+            {"content":"Create implementation plan","status":"completed","priority":"high"},
+            {"content":"Delegate to agent","status":"in_progress","priority":"medium"}
+            ]}}}
+            ]}]
+        """.trimIndent()
+        val list = json.decodeFromString<List<MessageWithParts>>(apiJson)
+        val toolPart = list[0].parts[0]
+        assertEquals(2, toolPart.toolTodos.size)
+        assertEquals("Create implementation plan", toolPart.toolTodos[0].content)
+        assertTrue(toolPart.toolTodos[0].isCompleted)
+        assertEquals("Delegate to agent", toolPart.toolTodos[1].content)
+        assertFalse(toolPart.toolTodos[1].isCompleted)
+    }
+
+    @Test
     fun `MessageWithParts parses files as object array`() {
         val apiJson = """
             [{"info":{"id":"msg_1","role":"assistant","sessionID":"ses_1"},"parts":[
