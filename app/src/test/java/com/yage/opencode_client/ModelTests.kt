@@ -37,6 +37,13 @@ class ModelTests {
     }
 
     @Test
+    fun `Session displayName prefers title then directory last segment then id`() {
+        assertEquals("My Session", Session(id = "s1", directory = "/a/b", title = "My Session").displayName)
+        assertEquals("project", Session(id = "s2", directory = "/home/user/project", title = null).displayName)
+        assertEquals("s3", Session(id = "s3", directory = "", title = null).displayName)
+    }
+
+    @Test
     fun `SessionStatus type checks`() {
         val idle = SessionStatus(type = "idle")
         assertTrue(idle.isIdle)

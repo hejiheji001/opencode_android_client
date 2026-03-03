@@ -4,8 +4,11 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Folder
@@ -26,6 +29,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.yage.opencode_client.data.model.Session
 import com.yage.opencode_client.data.repository.OpenCodeRepository
 import com.yage.opencode_client.ui.MainViewModel
 import com.yage.opencode_client.ui.chat.ChatScreen
@@ -88,7 +92,7 @@ class MainActivity : ComponentActivity() {
 
             OpenCodeTheme(darkTheme = darkTheme) {
                 if (isTablet) {
-                    TabletLayout(repository = repository)
+                    TabletLayout(repository = repository, viewModel = viewModel)
                 } else {
                     PhoneLayout(repository = repository)
                 }
@@ -163,48 +167,56 @@ private fun PhoneLayout(repository: OpenCodeRepository) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TabletLayout(repository: OpenCodeRepository) {
-    var showSettings by remember { mutableStateOf(false) }
+private fun TabletLayout(repository: OpenCodeRepository, viewModel: MainViewModel) {
+    var selectedTab by remember { mutableIntStateOf(0) }
+    val onOpenSettings: () -> Unit = { selectedTab = 1 }
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
     Row(modifier = Modifier.fillMaxSize()) {
-        // Left panel: Workspace (Files + Settings)
+        // Left panel: Workspace (Session list + Files) or Settings
         Column(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxHeight()
         ) {
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                tonalElevation = 1.dp
+            TabRow(
+                selectedTabIndex = selectedTab,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-                ) {
-                    Text(
-                        if (showSettings) "Settings" else "Files",
-                        style = MaterialTheme.typography.titleSmall
+                Tab(
+                    selected = selectedTab == 0,
+                    onClick = { selectedTab = 0 },
+                    text = { Text("Workspace") },
+                    icon = { Icon(Icons.Default.Folder, contentDescription = null) }
+                )
+                Tab(
+                    selected = selectedTab == 1,
+                    onClick = { selectedTab = 1 },
+                    text = { Text("Settings") },
+                    icon = { Icon(Icons.Default.Settings, contentDescription = null) }
+                )
+            }
+
+            if (selectedTab == 1) {
+                SettingsScreen()
+            } else {
+                Column(modifier = Modifier.fillMaxSize()) {
+                    SessionList(
+                        sessions = state.sessions,
+                        currentSessionId = state.currentSessionId,
+                        onSelectSession = { viewModel.selectSession(it) },
+                        onCreateSession = { viewModel.createSession() }
                     )
-                    IconButton(onClick = { showSettings = !showSettings }) {
-                        Icon(
-                            if (showSettings) Icons.Default.Folder else Icons.Default.Settings,
-                            contentDescription = if (showSettings) "Show Files" else "Show Settings"
+                    HorizontalDivider()
+                    Box(modifier = Modifier.weight(1f)) {
+                        FilesScreen(
+                            repository = repository,
+                            onFileClick = { }
                         )
                     }
                 }
-            }
-
-            if (showSettings) {
-                SettingsScreen()
-            } else {
-                FilesScreen(
-                    repository = repository,
-                    onFileClick = { }
-                )
             }
         }
 
@@ -232,8 +244,60 @@ private fun TabletLayout(repository: OpenCodeRepository) {
         ) {
             ChatScreen(
                 onNavigateToFiles = { },
-                onNavigateToSettings = { showSettings = true }
+                onNavigateToSettings = onOpenSettings
             )
+        }
+    }
+}
+
+@Composable
+private fun SessionList(
+    sessions: List<Session>,
+    currentSessionId: String?,
+    onSelectSession: (String) -> Unit,
+    onCreateSession: () -> Unit
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            tonalElevation = 0.dp,
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+            ) {
+                Text(
+                    "Sessions",
+                    style = MaterialTheme.typography.titleSmall
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                TextButton(onClick = onCreateSession) {
+                    Text("New")
+                }
+            }
+        }
+        LazyColumn(
+            modifier = Modifier.height(180.dp)
+        ) {
+            items(sessions, key = { it.id }) { session ->
+                val isSelected = session.id == currentSessionId
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onSelectSession(session.id) }
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = session.displayName,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
         }
     }
 }

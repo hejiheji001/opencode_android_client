@@ -176,3 +176,9 @@
 - 默认 Server URL 改为 `http://quantum.tail63c3c5.ts.net:4096`（Tailscale MagicDNS）
 - 更新 SettingsManager、OpenCodeRepository、SettingsScreen placeholder
 - 新增单元测试：`default server URL is Tailscale quantum`
+
+### 平板布局改进
+- **Tab 切换**：左侧面板用 TabRow [Workspace] [Settings] 替代图标，便于在 Files 与 Settings 间切换
+- **Session 列表**：Workspace Tab 顶部显示 Session 列表（含 New 按钮），下方为文件树
+- **消息空状态**：Chat 无消息时显示 "No messages yet. Send a message to start."
+- **Session.displayName**：提取 session 显示名逻辑为扩展属性，优先 title → directory 末段 → id

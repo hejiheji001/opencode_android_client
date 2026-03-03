@@ -204,7 +204,7 @@ private fun TopBar(
                     DropdownMenuItem(
                         text = {
                             Text(
-                                session.title ?: session.directory.split("/").lastOrNull() ?: session.id,
+                                session.displayName,
                                 color = if (session.id == currentSessionId)
                                     MaterialTheme.colorScheme.primary
                                 else
@@ -321,6 +321,22 @@ private fun MessageList(
                     contentAlignment = Alignment.Center
                 ) {
                     CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                }
+            }
+        }
+        if (!isLoading && messages.isEmpty()) {
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(32.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No messages yet. Send a message to start.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.outline
+                    )
                 }
             }
         }

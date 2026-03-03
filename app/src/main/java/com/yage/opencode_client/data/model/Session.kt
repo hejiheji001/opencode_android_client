@@ -17,6 +17,9 @@ data class Session(
     val share: ShareInfo? = null,
     val summary: SummaryInfo? = null
 ) {
+    /** Display name for UI: title, or last path segment of directory, or id */
+    val displayName: String
+        get() = title ?: directory.split("/").filter { it.isNotEmpty() }.lastOrNull() ?: id
     @Serializable
     data class TimeInfo(
         val created: Long? = null,
