@@ -15,7 +15,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.yage.opencode_client.ui.MainViewModel
-import com.yage.opencode_client.util.SettingsManager
 import com.yage.opencode_client.util.ThemeMode
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -26,16 +25,28 @@ fun SettingsScreen(
     viewModel: MainViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val saved = remember { viewModel.getSavedConnectionSettings() }
 
-    var serverUrl by remember { mutableStateOf("") }
-    var username by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    var serverUrl by remember { mutableStateOf(saved.serverUrl) }
+    var username by remember { mutableStateOf(saved.username) }
+    var password by remember { mutableStateOf(saved.password) }
     var showPassword by remember { mutableStateOf(false) }
     var isTesting by remember { mutableStateOf(false) }
     var testResult by remember { mutableStateOf<TestResult?>(null) }
 
-    LaunchedEffect(Unit) {
-        // Initialize with current settings
+    // Update test result when connection test completes
+    LaunchedEffect(state.isConnecting) {
+        if (!state.isConnecting && isTesting) {
+            isTesting = false
+            testResult = TestResult(
+                success = state.isConnected,
+                message = if (state.isConnected) {
+                    "Connected successfully" + (state.serverVersion?.let { " (v$it)" } ?: "")
+                } else {
+                    state.error ?: "Connection failed"
+                }
+            )
+        }
     }
 
     Column(
@@ -116,12 +127,13 @@ fun SettingsScreen(
             Button(
                 onClick = {
                     isTesting = true
+                    testResult = null
                     viewModel.configureServer(
                         url = serverUrl,
                         username = username.ifBlank { null },
                         password = password.ifBlank { null }
                     )
-                    // Test connection
+                    viewModel.testConnection()
                 },
                 enabled = serverUrl.isNotBlank() && !isTesting
             ) {
@@ -142,6 +154,7 @@ fun SettingsScreen(
                         username = username.ifBlank { null },
                         password = password.ifBlank { null }
                     )
+                    testResult = TestResult(success = true, message = "Settings saved")
                 },
                 enabled = serverUrl.isNotBlank()
             ) {

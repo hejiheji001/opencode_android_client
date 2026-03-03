@@ -25,16 +25,23 @@ class OpenCodeRepository @Inject constructor() {
         coerceInputValues = true
     }
 
-    private val okHttpClient: OkHttpClient by lazy {
-        OkHttpClient.Builder()
+    private var okHttpClient: OkHttpClient = buildOkHttpClient()
+    private var retrofit: Retrofit = buildRetrofit()
+    private var api: OpenCodeApi = retrofit.create(OpenCodeApi::class.java)
+    private var sseClient: SSEClient = SSEClient(okHttpClient)
+
+    private fun buildOkHttpClient(): OkHttpClient {
+        return OkHttpClient.Builder()
             .addInterceptor(HttpLoggingInterceptor().apply {
                 level = HttpLoggingInterceptor.Level.BASIC
             })
             .addInterceptor { chain ->
                 val request = chain.request().newBuilder()
                     .apply {
-                        if (username != null && password != null) {
-                            val credential = "$username:$password"
+                        val u = username
+                        val p = password
+                        if (u != null && p != null) {
+                            val credential = "$u:$p"
                             val encoded = Base64.getEncoder().encodeToString(credential.toByteArray())
                             header("Authorization", "Basic $encoded")
                         }
@@ -42,26 +49,32 @@ class OpenCodeRepository @Inject constructor() {
                     .build()
                 chain.proceed(request)
             }
+            .connectTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
+            .readTimeout(0, java.util.concurrent.TimeUnit.SECONDS)
             .build()
     }
 
-    private val retrofit: Retrofit by lazy {
+    private fun buildRetrofit(): Retrofit {
         val url = if (baseUrl.startsWith("http")) baseUrl else "http://$baseUrl"
-        Retrofit.Builder()
+        return Retrofit.Builder()
             .baseUrl(url.trimEnd('/') + "/")
             .client(okHttpClient)
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()
     }
 
-    private val api: OpenCodeApi by lazy { retrofit.create(OpenCodeApi::class.java) }
-
-    private val sseClient: SSEClient by lazy { SSEClient(okHttpClient) }
+    private fun rebuildClients() {
+        okHttpClient = buildOkHttpClient()
+        retrofit = buildRetrofit()
+        api = retrofit.create(OpenCodeApi::class.java)
+        sseClient = SSEClient(okHttpClient)
+    }
 
     fun configure(baseUrl: String, username: String? = null, password: String? = null) {
         this.baseUrl = baseUrl
         this.username = username
         this.password = password
+        rebuildClients()
     }
 
     suspend fun checkHealth(): Result<HealthResponse> = runCatching { api.getHealth() }

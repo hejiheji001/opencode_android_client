@@ -7,7 +7,9 @@
 ```bash
 export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
 export PATH="$JAVA_HOME/bin:$PATH"
-./gradlew assembleDebug
+
+# For integration tests (adb)
+export PATH="$PATH:$HOME/Library/Android/sdk/platform-tools"
 ```
 
 **持久化**：在 `~/.zshrc` 中加入上述 `JAVA_HOME` 和 `PATH` 两行，然后 `source ~/.zshrc`。

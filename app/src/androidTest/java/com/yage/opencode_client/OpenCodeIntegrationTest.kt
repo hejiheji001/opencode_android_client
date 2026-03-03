@@ -25,7 +25,7 @@ class OpenCodeIntegrationTest {
 
     @Before
     fun setup() {
-        val args = InstrumentationRegistry.getInstrumentation().arguments
+        val args = InstrumentationRegistry.getArguments()
         val serverUrl = args.getString("openCodeServerUrl") ?: ""
         val username = args.getString("openCodeUsername") ?: ""
         val password = args.getString("openCodePassword") ?: ""
@@ -49,10 +49,10 @@ class OpenCodeIntegrationTest {
 
     @Test
     fun getSessions_withCredentials() = runBlocking {
-        val args = InstrumentationRegistry.getInstrumentation().arguments
+        val args = InstrumentationRegistry.getArguments()
         val username = args.getString("openCodeUsername") ?: ""
         val password = args.getString("openCodePassword") ?: ""
-        assumeTrue("Skipping: no credentials in .env", username.isNotEmpty() && password.isNotEmpty())
+        assumeTrue("Skipping: no credentials in .env - copy .env.example to .env", username.isNotEmpty() && password.isNotEmpty())
 
         val result = repository.getSessions()
         assertTrue("Get sessions failed: ${result.exceptionOrNull()}", result.isSuccess)

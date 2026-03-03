@@ -11,6 +11,12 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+data class ConnectionFormSettings(
+    val serverUrl: String,
+    val username: String,
+    val password: String
+)
+
 data class AppState(
     val isConnected: Boolean = false,
     val isConnecting: Boolean = false,
@@ -76,6 +82,12 @@ class MainViewModel @Inject constructor(
         settingsManager.password = password
         repository.configure(url, username, password)
     }
+
+    fun getSavedConnectionSettings(): ConnectionFormSettings = ConnectionFormSettings(
+        serverUrl = settingsManager.serverUrl,
+        username = settingsManager.username ?: "",
+        password = settingsManager.password ?: ""
+    )
 
     fun testConnection() {
         viewModelScope.launch {
