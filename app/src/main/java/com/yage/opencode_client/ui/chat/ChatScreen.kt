@@ -620,7 +620,7 @@ private fun ToolCard(
     modifier: Modifier = Modifier.fillMaxWidth()
 ) {
     val isRunning = status == "running"
-    var expanded by remember { mutableStateOf(isRunning || todos.isNotEmpty()) }
+    var expanded by remember { mutableStateOf(isRunning) }
     val firstFile = filePaths.firstOrNull()
     val isWriteOrPatch = toolName == "write" || toolName == "patch" || toolName.contains("write")
     val writePatchColor = if (isSystemInDarkTheme()) ToolWritePatchBackgroundDark else ToolWritePatchBackground
