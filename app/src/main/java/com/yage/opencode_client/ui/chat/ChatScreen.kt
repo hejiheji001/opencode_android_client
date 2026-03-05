@@ -204,7 +204,15 @@ private fun TopBar(
                     }
                     agents.forEach { agent ->
                         DropdownMenuItem(
-                            text = { Text(agent.shortName) },
+                            text = {
+                                Text(
+                                    agent.name,
+                                    color = if (agent.name == selectedAgent)
+                                        MaterialTheme.colorScheme.primary
+                                    else
+                                        MaterialTheme.colorScheme.onSurface
+                                )
+                            },
                             onClick = {
                                 onSelectAgent(agent.name)
                                 showAgentMenu = false

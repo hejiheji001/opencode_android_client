@@ -276,3 +276,6 @@
 - **备份排除**：backup_rules.xml 排除 shared_prefs；data_extraction_rules 的 cloud-backup 与 device-transfer 排除 shared_prefs
 - **文档脱敏**：working.md 移除 ts.net 具体节点名；RFC/PRD 更新网络安全描述
 - **Release 混淆**：isMinifyEnabled=true、isShrinkResources=true，ProGuard 增加 kotlinx.serialization 与 errorprone dontwarn
+
+### Agent 显示修复 (2026-03-03 续)
+- **Agent 下拉**：显示完整 name（与 web 客户端一致），选中项高亮为 primary 色
