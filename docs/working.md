@@ -56,3 +56,4 @@
 - Session 列表左滑显示红色删除按钮，点击删除，SwipeToDismissBox backgroundContent
 - 修复部分 item 左滑无响应：gesturesEnabled = !listState.isScrollInProgress，避免 LazyColumn 滚动与 SwipeToDismissBox 手势冲突
 - 手机端 Session 删除：用 ModalBottomSheet 替代下拉菜单，展示与平板相同的 SessionList，左滑 reveal 删除
+- 修复 SwipeToDismissBox 松手弹回：改用 AnchoredDraggable，左滑后松手可定住，删除按钮保持可见可点击

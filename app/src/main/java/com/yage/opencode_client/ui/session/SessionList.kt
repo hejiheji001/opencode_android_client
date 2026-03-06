@@ -1,7 +1,14 @@
 package com.yage.opencode_client.ui.session
 
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.rememberSplineBasedDecay
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.AnchoredDraggableState
+import androidx.compose.foundation.gestures.DraggableAnchors
+import androidx.compose.foundation.gestures.anchoredDraggable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -14,10 +21,68 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.yage.opencode_client.data.model.Session
+import kotlin.math.roundToInt
+
+private enum class SwipeAnchor { Start, End }
 
 private const val SESSION_PAGE_SIZE = 20
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun SwipeRevealRow(
+    dragState: AnchoredDraggableState<SwipeAnchor>,
+    enabled: Boolean,
+    onDelete: () -> Unit,
+    altBg: Boolean,
+    isSelected: Boolean,
+    displayName: String,
+    onSelect: () -> Unit
+) {
+    Box(modifier = Modifier.fillMaxWidth()) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.error)
+                .clickable(onClick = onDelete),
+            contentAlignment = Alignment.CenterEnd
+        ) {
+            Icon(
+                Icons.Default.Delete,
+                contentDescription = "Delete session",
+                tint = MaterialTheme.colorScheme.onError,
+                modifier = Modifier.padding(horizontal = 20.dp)
+            )
+        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .offset { IntOffset(x = -dragState.requireOffset().roundToInt(), y = 0) }
+                .anchoredDraggable(
+                    state = dragState,
+                    orientation = Orientation.Horizontal,
+                    enabled = enabled,
+                    reverseDirection = true
+                )
+                .background(
+                    if (altBg) MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.5f)
+                    else MaterialTheme.colorScheme.surface
+                )
+                .clickable(onClick = onSelect)
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = displayName,
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+            )
+        }
+    }
+}
 
 @Composable
 fun SessionList(
@@ -78,51 +143,32 @@ fun SessionList(
             itemsIndexed(sessionsToShow, key = { _, s -> s.id }) { index, session ->
                 val isSelected = session.id == currentSessionId
                 val altBg = index % 2 == 1
-                val dismissState = rememberSwipeToDismissBoxState(
-                    confirmValueChange = { false }
-                )
+                val density = LocalDensity.current
+                val deleteWidthPx = with(density) { 80.dp.toPx() }
+                val decay = rememberSplineBasedDecay<Float>()
+                val dragState = remember(deleteWidthPx) {
+                    AnchoredDraggableState(
+                        initialValue = SwipeAnchor.Start,
+                        anchors = DraggableAnchors {
+                            SwipeAnchor.Start at 0f
+                            SwipeAnchor.End at deleteWidthPx
+                        },
+                        positionalThreshold = { total: Float -> total * 0.5f },
+                        velocityThreshold = { with(density) { 100.dp.toPx() } },
+                        snapAnimationSpec = tween(),
+                        decayAnimationSpec = decay
+                    )
+                }
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    SwipeToDismissBox(
-                        state = dismissState,
-                        modifier = Modifier.fillMaxWidth(),
-                        enableDismissFromStartToEnd = false,
-                        enableDismissFromEndToStart = true,
-                        gesturesEnabled = !listState.isScrollInProgress,
-                        backgroundContent = {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(MaterialTheme.colorScheme.error)
-                                    .clickable { onDeleteSession(session.id) },
-                                contentAlignment = Alignment.CenterEnd
-                            ) {
-                                Icon(
-                                    Icons.Default.Delete,
-                                    contentDescription = "Delete session",
-                                    tint = MaterialTheme.colorScheme.onError,
-                                    modifier = Modifier.padding(horizontal = 20.dp)
-                                )
-                            }
-                        }
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(
-                                    if (altBg) MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.5f)
-                                    else MaterialTheme.colorScheme.surface
-                                )
-                                .clickable { onSelectSession(session.id) }
-                                .padding(horizontal = 12.dp, vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = session.displayName,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                    }
+                    SwipeRevealRow(
+                        dragState = dragState,
+                        enabled = !listState.isScrollInProgress,
+                        onDelete = { onDeleteSession(session.id) },
+                        altBg = altBg,
+                        isSelected = isSelected,
+                        displayName = session.displayName,
+                        onSelect = { onSelectSession(session.id) }
+                    )
                     if (index < sessionsToShow.size - 1) {
                         HorizontalDivider(
                             modifier = Modifier.padding(horizontal = 12.dp),
