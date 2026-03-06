@@ -42,10 +42,10 @@ private fun SwipeRevealRow(
     displayName: String,
     onSelect: () -> Unit
 ) {
-    Box(modifier = Modifier.fillMaxWidth()) {
+    Box(modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
         Box(
             modifier = Modifier
-                .fillMaxSize()
+                .matchParentSize()
                 .background(MaterialTheme.colorScheme.error)
                 .clickable(onClick = onDelete),
             contentAlignment = Alignment.CenterEnd
