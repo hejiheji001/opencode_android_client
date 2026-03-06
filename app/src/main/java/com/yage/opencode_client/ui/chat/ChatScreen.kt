@@ -25,6 +25,7 @@ import com.yage.opencode_client.data.model.*
 import com.yage.opencode_client.ui.AppState
 import com.yage.opencode_client.ui.MainViewModel
 import androidx.compose.foundation.isSystemInDarkTheme
+import com.yage.opencode_client.ui.session.SessionList
 import com.yage.opencode_client.ui.theme.markdownTypographyCompact
 import com.yage.opencode_client.ui.theme.ToolWritePatchBackgroundDark
 
@@ -136,7 +137,7 @@ private fun TopBar(
     showNewSessionInTopBar: Boolean = true,
     showSessionListInTopBar: Boolean = true
 ) {
-    var showSessionMenu by remember { mutableStateOf(false) }
+    var showSessionSheet by remember { mutableStateOf(false) }
     var showAgentMenu by remember { mutableStateOf(false) }
     var showModelMenu by remember { mutableStateOf(false) }
 
@@ -231,61 +232,36 @@ private fun TopBar(
             }
 
             if (showSessionListInTopBar) {
-            Box {
-                IconButton(onClick = { showSessionMenu = true }) {
+                IconButton(onClick = { showSessionSheet = true }) {
                     Icon(Icons.Default.List, contentDescription = "Sessions")
                 }
-                DropdownMenu(
-                    expanded = showSessionMenu,
-                    onDismissRequest = { showSessionMenu = false }
-                ) {
-                if (showNewSessionInTopBar) {
-                    DropdownMenuItem(
-                        text = { Text("New Session") },
-                        onClick = {
-                            onCreateSession()
-                            showSessionMenu = false
-                        }
-                    )
-                    HorizontalDivider()
-                }
-                sessions.forEach { session ->
-                    DropdownMenuItem(
-                        text = {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    session.displayName,
-                                    color = if (session.id == currentSessionId)
-                                        MaterialTheme.colorScheme.primary
-                                    else
-                                        MaterialTheme.colorScheme.onSurface,
-                                    modifier = Modifier.weight(1f)
-                                )
-                                IconButton(
-                                    onClick = {
-                                        onDeleteSession(session.id)
-                                        showSessionMenu = false
-                                    }
-                                ) {
-                                    Icon(
-                                        Icons.Default.Delete,
-                                        contentDescription = "Delete session",
-                                        tint = MaterialTheme.colorScheme.error
-                                    )
-                                }
-                            }
-                        },
-                        onClick = {
-                            onSelectSession(session.id)
-                            showSessionMenu = false
-                        }
-                    )
-                }
-                }
             }
+            if (showSessionSheet) {
+                ModalBottomSheet(onDismissRequest = { showSessionSheet = false }) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(400.dp)
+                    ) {
+                        SessionList(
+                            sessions = sessions,
+                            currentSessionId = currentSessionId,
+                            onSelectSession = {
+                                onSelectSession(it)
+                                showSessionSheet = false
+                            },
+                            onCreateSession = {
+                                onCreateSession()
+                                showSessionSheet = false
+                            },
+                            onDeleteSession = {
+                                onDeleteSession(it)
+                                showSessionSheet = false
+                            },
+                            onOpenSettings = null
+                        )
+                    }
+                }
             }
             if (showSettingsButton) {
                 IconButton(onClick = onNavigateToSettings) {
