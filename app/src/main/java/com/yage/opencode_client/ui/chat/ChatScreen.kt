@@ -28,7 +28,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import com.mikepenz.markdown.m3.Markdown
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.core.content.ContextCompat
 import com.yage.opencode_client.data.audio.AIBuildersAudioClient
 import com.yage.opencode_client.data.model.*
@@ -43,7 +42,7 @@ import kotlinx.coroutines.flow.collect
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(
-    viewModel: MainViewModel = hiltViewModel(),
+    viewModel: MainViewModel,
     onNavigateToFiles: (String) -> Unit = {},
     onNavigateToSettings: () -> Unit = {},
     showSettingsButton: Boolean = true,
@@ -68,7 +67,6 @@ fun ChatScreen(
             sessions = state.sessions,
             currentSessionId = state.currentSessionId,
             expandedSessionIds = state.expandedSessionIds,
-            isBusy = state.isCurrentSessionBusy,
             agents = state.visibleAgents,
             selectedAgent = state.selectedAgentName,
             availableModels = state.availableModels,
@@ -78,7 +76,6 @@ fun ChatScreen(
             onCreateSession = { viewModel.createSession() },
             onDeleteSession = { viewModel.deleteSession(it) },
             onToggleSessionExpanded = { viewModel.toggleSessionExpanded(it) },
-            onAbort = { viewModel.abortSession() },
             onSelectAgent = { viewModel.selectAgent(it) },
             onSelectModel = { viewModel.selectModel(it) },
             onNavigateToSettings = onNavigateToSettings,
@@ -177,7 +174,6 @@ private fun TopBar(
     sessions: List<Session>,
     currentSessionId: String?,
     expandedSessionIds: Set<String> = emptySet(),
-    isBusy: Boolean,
     agents: List<AgentInfo>,
     selectedAgent: String,
     availableModels: List<AppState.ModelOption>,
@@ -187,7 +183,6 @@ private fun TopBar(
     onCreateSession: () -> Unit,
     onDeleteSession: (String) -> Unit,
     onToggleSessionExpanded: (String) -> Unit = {},
-    onAbort: () -> Unit,
     onSelectAgent: (String) -> Unit,
     onSelectModel: (Int) -> Unit,
     onNavigateToSettings: () -> Unit = {},
@@ -280,12 +275,6 @@ private fun TopBar(
                             }
                         )
                     }
-                }
-            }
-
-            if (isBusy) {
-                IconButton(onClick = onAbort) {
-                    Icon(Icons.Default.Stop, contentDescription = "Abort")
                 }
             }
 
