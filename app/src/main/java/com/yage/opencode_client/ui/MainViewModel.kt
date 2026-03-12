@@ -24,6 +24,7 @@ data class AppState(
     val isConnecting: Boolean = false,
     val serverVersion: String? = null,
     val sessions: List<Session> = emptyList(),
+    val expandedSessionIds: Set<String> = emptySet(),
     val currentSessionId: String? = null,
     val sessionStatuses: Map<String, SessionStatus> = emptyMap(),
     val messages: List<MessageWithParts> = emptyList(),
@@ -377,6 +378,17 @@ class MainViewModel @Inject constructor(
     fun selectAgent(agentName: String) {
         settingsManager.selectedAgentName = agentName
         _state.update { it.copy(selectedAgentName = agentName) }
+    }
+
+    fun toggleSessionExpanded(sessionId: String) {
+        _state.update { state ->
+            val next = if (state.expandedSessionIds.contains(sessionId)) {
+                state.expandedSessionIds - sessionId
+            } else {
+                state.expandedSessionIds + sessionId
+            }
+            state.copy(expandedSessionIds = next)
+        }
     }
 
     fun selectModel(index: Int) {

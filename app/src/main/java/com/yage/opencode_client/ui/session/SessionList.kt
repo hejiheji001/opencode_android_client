@@ -14,7 +14,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -40,7 +42,11 @@ private fun SwipeRevealRow(
     altBg: Boolean,
     isSelected: Boolean,
     displayName: String,
-    onSelect: () -> Unit
+    onSelect: () -> Unit,
+    depth: Int = 0,
+    hasChildren: Boolean = false,
+    isCollapsed: Boolean = true,
+    onToggleCollapse: (() -> Unit)? = null
 ) {
     Box(modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
         Box(
@@ -72,13 +78,28 @@ private fun SwipeRevealRow(
                     else MaterialTheme.colorScheme.surface
                 )
                 .clickable(onClick = onSelect)
-                .padding(horizontal = 12.dp, vertical = 10.dp),
+                .padding(start = (12 + depth * 24).dp, end = 12.dp, top = 10.dp, bottom = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            if (hasChildren && onToggleCollapse != null) {
+                IconButton(
+                    onClick = onToggleCollapse,
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    Icon(
+                        if (isCollapsed) Icons.Default.ChevronRight else Icons.Default.KeyboardArrowDown,
+                        contentDescription = if (isCollapsed) "Expand" else "Collapse",
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            } else if (hasChildren) {
+                Spacer(modifier = Modifier.size(24.dp))
+            }
             Text(
                 text = displayName,
                 style = MaterialTheme.typography.bodyMedium,
-                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f, fill = false)
             )
         }
     }
@@ -88,21 +109,27 @@ private fun SwipeRevealRow(
 fun SessionList(
     sessions: List<Session>,
     currentSessionId: String?,
+    expandedSessionIds: Set<String> = emptySet(),
     onSelectSession: (String) -> Unit,
     onCreateSession: () -> Unit,
     onDeleteSession: (String) -> Unit,
+    onToggleSessionExpanded: (String) -> Unit = {},
     onOpenSettings: (() -> Unit)? = null
 ) {
+    val tree = remember(sessions) { buildSessionTree(sessions) }
+    val visibleRows = remember(tree, expandedSessionIds) {
+        flattenVisibleTree(tree, expandedSessionIds)
+    }
     var displayedCount by remember { mutableStateOf(SESSION_PAGE_SIZE) }
-    val sessionsToShow = sessions.take(displayedCount)
+    val rowsToShow = visibleRows.take(displayedCount)
     val listState = rememberLazyListState()
 
     LaunchedEffect(listState) {
         snapshotFlow {
             listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
         }.collect { lastVisible ->
-            if (lastVisible >= sessionsToShow.size - 2 && sessionsToShow.size < sessions.size) {
-                displayedCount = (displayedCount + SESSION_PAGE_SIZE).coerceAtMost(sessions.size)
+            if (lastVisible >= rowsToShow.size - 2 && rowsToShow.size < visibleRows.size) {
+                displayedCount = (displayedCount + SESSION_PAGE_SIZE).coerceAtMost(visibleRows.size)
             }
         }
     }
@@ -140,9 +167,12 @@ fun SessionList(
                 .weight(1f)
                 .fillMaxWidth()
         ) {
-            itemsIndexed(sessionsToShow, key = { _, s -> s.id }) { index, session ->
+            itemsIndexed(rowsToShow, key = { _, (node, _) -> node.session.id }) { index, (node, depth) ->
+                val session = node.session
                 val isSelected = session.id == currentSessionId
                 val altBg = index % 2 == 1
+                val hasChildren = node.children.isNotEmpty()
+                val isExpanded = expandedSessionIds.contains(session.id)
                 val density = LocalDensity.current
                 val deleteWidthPx = with(density) { 56.dp.toPx() }
                 val decay = rememberSplineBasedDecay<Float>()
@@ -167,9 +197,13 @@ fun SessionList(
                         altBg = altBg,
                         isSelected = isSelected,
                         displayName = session.displayName,
-                        onSelect = { onSelectSession(session.id) }
+                        onSelect = { onSelectSession(session.id) },
+                        depth = depth,
+                        hasChildren = hasChildren,
+                        isCollapsed = !isExpanded,
+                        onToggleCollapse = if (hasChildren) { { onToggleSessionExpanded(session.id) } } else null
                     )
-                    if (index < sessionsToShow.size - 1) {
+                    if (index < rowsToShow.size - 1) {
                         HorizontalDivider(
                             modifier = Modifier.padding(horizontal = 12.dp),
                             color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
@@ -177,7 +211,7 @@ fun SessionList(
                     }
                 }
             }
-            if (sessionsToShow.size < sessions.size) {
+            if (rowsToShow.size < visibleRows.size) {
                 item(key = "load_more") {
                     Box(
                         modifier = Modifier

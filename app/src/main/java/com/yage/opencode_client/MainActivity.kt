@@ -211,9 +211,11 @@ private fun TabletLayout(viewModel: MainViewModel, repository: OpenCodeRepositor
                 SessionList(
                     sessions = state.sessions,
                     currentSessionId = state.currentSessionId,
+                    expandedSessionIds = state.expandedSessionIds,
                     onSelectSession = { viewModel.selectSession(it) },
                     onCreateSession = { viewModel.createSession() },
                     onDeleteSession = { viewModel.deleteSession(it) },
+                    onToggleSessionExpanded = { viewModel.toggleSessionExpanded(it) },
                     onOpenSettings = { selectedTab = 1 }
                 )
             }

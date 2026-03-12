@@ -46,6 +46,7 @@ fun ChatScreen(
         TopBar(
             sessions = state.sessions,
             currentSessionId = state.currentSessionId,
+            expandedSessionIds = state.expandedSessionIds,
             isBusy = state.isCurrentSessionBusy,
             agents = state.visibleAgents,
             selectedAgent = state.selectedAgentName,
@@ -55,6 +56,7 @@ fun ChatScreen(
             onSelectSession = { viewModel.selectSession(it) },
             onCreateSession = { viewModel.createSession() },
             onDeleteSession = { viewModel.deleteSession(it) },
+            onToggleSessionExpanded = { viewModel.toggleSessionExpanded(it) },
             onAbort = { viewModel.abortSession() },
             onSelectAgent = { viewModel.selectAgent(it) },
             onSelectModel = { viewModel.selectModel(it) },
@@ -122,6 +124,7 @@ fun ChatScreen(
 private fun TopBar(
     sessions: List<Session>,
     currentSessionId: String?,
+    expandedSessionIds: Set<String> = emptySet(),
     isBusy: Boolean,
     agents: List<AgentInfo>,
     selectedAgent: String,
@@ -131,6 +134,7 @@ private fun TopBar(
     onSelectSession: (String) -> Unit,
     onCreateSession: () -> Unit,
     onDeleteSession: (String) -> Unit,
+    onToggleSessionExpanded: (String) -> Unit = {},
     onAbort: () -> Unit,
     onSelectAgent: (String) -> Unit,
     onSelectModel: (Int) -> Unit,
@@ -248,6 +252,7 @@ private fun TopBar(
                         SessionList(
                             sessions = sessions,
                             currentSessionId = currentSessionId,
+                            expandedSessionIds = expandedSessionIds,
                             onSelectSession = {
                                 onSelectSession(it)
                                 showSessionSheet = false
@@ -260,6 +265,7 @@ private fun TopBar(
                                 onDeleteSession(it)
                                 showSessionSheet = false
                             },
+                            onToggleSessionExpanded = onToggleSessionExpanded,
                             onOpenSettings = null
                         )
                     }
