@@ -208,6 +208,7 @@ class MainViewModel @Inject constructor(
     fun handleSSEEvent(event: SSEEvent) {
         when (event.payload.type) {
             "session.created" -> { /* 更新 sessions */ }
+            "session.updated" -> { /* 替换 session 对象（含 title） */ }
             "message.created" -> { /* 追加消息 */ }
             "message.part.updated" -> { /* 流式更新 */ }
             // ...

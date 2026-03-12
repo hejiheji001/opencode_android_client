@@ -120,6 +120,14 @@
 - 新增 `ChatInputBarInstrumentedTest.kt` 与 `SettingsSectionsInstrumentedTest.kt`，覆盖 Chat 输入区动作按钮状态、Settings 语音区按钮可用性与成功态展示
 - 调整 connected integration tests：仅在显式配置且服务可达时运行 OpenCode server smoke tests；未配置或服务不可达时自动 skip，避免把外部环境问题误报为回归
 - 执行验证：`./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest koverHtmlReport connectedDebugAndroidTest` 通过
+- 修复 session 标题不刷新：新增 `session.updated` SSE 事件处理，参考 iOS 实现，服务端更新 session 标题后通过 SSE 推送至客户端并即时替换本地 session 对象（含 title），无需轮询或延时刷新
+- 修复工具调用折叠箭头方向：ToolCard 和 ReasoningCard 的折叠/展开箭头从 ExpandLess(↑)/ExpandMore(↓) 改为 ChevronRight(→)/KeyboardArrowDown(↓)，与 SessionList 树形折叠风格统一
+- 新增 `parseSessionUpdatedEvent` 解析器，兼容 "info" 和 "session" 两种 payload key（对齐 iOS）
+- 新增 2 个 MainViewModelTest：验证 session.updated 事件更新已有 session 标题、插入未知 session
+- 更新 PRD/RFC 标记相关功能完成
+
+---
+
 - 新建 busy-session 发送修复分支：`feature/allow-queued-send-while-busy`
 - 对齐 iOS 的会话排队行为：移除 Android Chat 输入区对 `isBusy` 的发送禁用，仅在转写中继续阻止发送；busy 状态下仍保留 stop 按钮
 - 新增 `MainViewModelTest` 回归用例，确认 current session 为 busy 时仍会调用 `repository.sendMessage(...)` 排队发送下一条 prompt

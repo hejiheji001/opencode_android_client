@@ -63,6 +63,21 @@ internal fun handleIncomingSseEvent(
                 onNonFatalIssue("Ignoring invalid session.created payload")
             }
         }
+        "session.updated" -> {
+            val updated = parseSessionUpdatedEvent(event)
+            if (updated != null) {
+                state.update {
+                    val existing = it.sessions.any { s -> s.id == updated.id }
+                    if (existing) {
+                        it.copy(sessions = it.sessions.map { s -> if (s.id == updated.id) updated else s })
+                    } else {
+                        it.copy(sessions = listOf(updated) + it.sessions)
+                    }
+                }
+            } else {
+                onNonFatalIssue("Ignoring invalid session.updated payload")
+            }
+        }
         "session.status" -> {
             val statusEvent = parseSessionStatusEvent(event)
             if (statusEvent != null) {

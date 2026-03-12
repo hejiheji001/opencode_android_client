@@ -51,6 +51,15 @@ internal fun parseSessionCreatedEvent(event: SSEEvent): SessionCreatedEvent? {
     }.getOrNull()
 }
 
+internal fun parseSessionUpdatedEvent(event: SSEEvent): Session? {
+    val sessionJson = event.payload.getJsonObject("info")
+        ?: event.payload.getJsonObject("session")
+        ?: return null
+    return runCatching {
+        Json.decodeFromString<Session>(sessionJson.toString())
+    }.getOrNull()
+}
+
 internal fun parseSessionStatusEvent(event: SSEEvent): SessionStatusEvent? {
     val sessionId = event.payload.getString("sessionID") ?: return null
     val statusJson = event.payload.getJsonObject("status") ?: return null

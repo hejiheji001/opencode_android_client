@@ -371,6 +371,75 @@ class MainViewModelTest {
     }
 
     @Test
+    fun `handleSSEEvent session updated replaces existing session title`() = runTest {
+        val viewModel = createViewModel()
+        updateState(viewModel) {
+            it.copy(sessions = listOf(
+                com.yage.opencode_client.data.model.Session(id = "session-1", directory = "/tmp/project", title = null)
+            ))
+        }
+
+        handleSse(
+            viewModel,
+            SSEEvent(
+                payload = SSEPayload(
+                    type = "session.updated",
+                    properties = buildJsonObject {
+                        put(
+                            "info",
+                            buildJsonObject {
+                                put("id", JsonPrimitive("session-1"))
+                                put("directory", JsonPrimitive("/tmp/project"))
+                                put("title", JsonPrimitive("Refactor auth module"))
+                            }
+                        )
+                    }
+                )
+            )
+        )
+
+        val sessions = viewModel.state.value.sessions
+        assertEquals(1, sessions.size)
+        assertEquals("session-1", sessions[0].id)
+        assertEquals("Refactor auth module", sessions[0].title)
+    }
+
+    @Test
+    fun `handleSSEEvent session updated inserts unknown session`() = runTest {
+        val viewModel = createViewModel()
+        updateState(viewModel) {
+            it.copy(sessions = listOf(
+                com.yage.opencode_client.data.model.Session(id = "session-1", directory = "/tmp/old")
+            ))
+        }
+
+        handleSse(
+            viewModel,
+            SSEEvent(
+                payload = SSEPayload(
+                    type = "session.updated",
+                    properties = buildJsonObject {
+                        put(
+                            "session",
+                            buildJsonObject {
+                                put("id", JsonPrimitive("session-new"))
+                                put("directory", JsonPrimitive("/tmp/new"))
+                                put("title", JsonPrimitive("New Feature"))
+                            }
+                        )
+                    }
+                )
+            )
+        )
+
+        val sessions = viewModel.state.value.sessions
+        assertEquals(2, sessions.size)
+        assertEquals("session-new", sessions[0].id)
+        assertEquals("New Feature", sessions[0].title)
+        assertEquals("session-1", sessions[1].id)
+    }
+
+    @Test
     fun `handleSSEEvent missing delta clears streaming state and refreshes messages`() = runTest {
         val messages = listOf(MessageWithParts(info = Message(id = "a2", role = "assistant")))
         coEvery { repository.getMessages("session-1", 30) } returns Result.success(messages)

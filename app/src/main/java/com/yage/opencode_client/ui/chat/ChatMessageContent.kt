@@ -19,8 +19,8 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
@@ -285,8 +285,8 @@ private fun ReasoningCard(
                 if (!isStreaming) {
                     IconButton(onClick = { expanded = !expanded }, modifier = Modifier.size(24.dp)) {
                         Icon(
-                            if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                            contentDescription = null,
+                            if (expanded) Icons.Default.KeyboardArrowDown else Icons.Default.ChevronRight,
+                            contentDescription = if (expanded) "Collapse" else "Expand",
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -344,8 +344,8 @@ private fun ToolCard(
                     }
                     IconButton(onClick = { expanded = !expanded }, modifier = Modifier.size(24.dp)) {
                         Icon(
-                            if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                            contentDescription = null,
+                            if (expanded) Icons.Default.KeyboardArrowDown else Icons.Default.ChevronRight,
+                            contentDescription = if (expanded) "Collapse" else "Expand",
                             modifier = Modifier.size(20.dp)
                         )
                     }
