@@ -38,6 +38,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.yage.opencode_client.data.model.AgentInfo
 import com.yage.opencode_client.data.model.Session
+import com.yage.opencode_client.data.model.SessionStatus
 import com.yage.opencode_client.ui.AppState
 import com.yage.opencode_client.ui.session.SessionList
 
@@ -46,6 +47,7 @@ import com.yage.opencode_client.ui.session.SessionList
 internal fun ChatTopBar(
     sessions: List<Session>,
     currentSessionId: String?,
+    sessionStatuses: Map<String, SessionStatus>,
     expandedSessionIds: Set<String> = emptySet(),
     agents: List<AgentInfo>,
     selectedAgent: String,
@@ -150,6 +152,7 @@ internal fun ChatTopBar(
                         SessionList(
                             sessions = sessions,
                             currentSessionId = currentSessionId,
+                            sessionStatuses = sessionStatuses,
                             expandedSessionIds = expandedSessionIds,
                             onSelectSession = {
                                 onSelectSession(it)

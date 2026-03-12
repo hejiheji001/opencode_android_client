@@ -23,10 +23,13 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.yage.opencode_client.data.model.Session
+import com.yage.opencode_client.data.model.SessionStatus
 import kotlin.math.roundToInt
 
 private enum class SwipeAnchor { Start, End }
@@ -41,6 +44,7 @@ private fun SwipeRevealRow(
     onDelete: () -> Unit,
     altBg: Boolean,
     isSelected: Boolean,
+    isBusy: Boolean,
     displayName: String,
     onSelect: () -> Unit,
     depth: Int = 0,
@@ -48,18 +52,35 @@ private fun SwipeRevealRow(
     isCollapsed: Boolean = true,
     onToggleCollapse: (() -> Unit)? = null
 ) {
+    val selectedBackgroundColor = lerp(
+        MaterialTheme.colorScheme.surface,
+        MaterialTheme.colorScheme.primaryContainer,
+        0.30f
+    )
+    val swipeRevealBackgroundColor = lerp(
+        MaterialTheme.colorScheme.surface,
+        MaterialTheme.colorScheme.primaryContainer,
+        0.28f
+    )
+    val rowBackgroundColor = when {
+        isSelected -> selectedBackgroundColor
+        altBg -> MaterialTheme.colorScheme.surfaceContainerLow
+        else -> MaterialTheme.colorScheme.surface
+    }
+    val titleColor = if (isBusy) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+
     Box(modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
         Box(
             modifier = Modifier
                 .matchParentSize()
-                .background(MaterialTheme.colorScheme.error)
+                .background(swipeRevealBackgroundColor)
                 .clickable(onClick = onDelete),
             contentAlignment = Alignment.CenterEnd
         ) {
             Icon(
                 Icons.Default.Delete,
                 contentDescription = "Delete session",
-                tint = MaterialTheme.colorScheme.onError,
+                tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(horizontal = 12.dp)
             )
         }
@@ -73,10 +94,7 @@ private fun SwipeRevealRow(
                     enabled = enabled,
                     reverseDirection = true
                 )
-                .background(
-                    if (altBg) MaterialTheme.colorScheme.surfaceContainerLow
-                    else MaterialTheme.colorScheme.surface
-                )
+                .background(rowBackgroundColor)
                 .clickable(onClick = onSelect)
                 .padding(start = (12 + depth * 24).dp, end = 12.dp, top = 10.dp, bottom = 10.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -97,8 +115,8 @@ private fun SwipeRevealRow(
             }
             Text(
                 text = displayName,
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                color = titleColor,
                 modifier = Modifier.weight(1f, fill = false)
             )
         }
@@ -109,6 +127,7 @@ private fun SwipeRevealRow(
 fun SessionList(
     sessions: List<Session>,
     currentSessionId: String?,
+    sessionStatuses: Map<String, SessionStatus> = emptyMap(),
     expandedSessionIds: Set<String> = emptySet(),
     onSelectSession: (String) -> Unit,
     onCreateSession: () -> Unit,
@@ -196,6 +215,7 @@ fun SessionList(
                         onDelete = { onDeleteSession(session.id) },
                         altBg = altBg,
                         isSelected = isSelected,
+                        isBusy = sessionStatuses[session.id]?.isBusy == true,
                         displayName = session.displayName,
                         onSelect = { onSelectSession(session.id) },
                         depth = depth,

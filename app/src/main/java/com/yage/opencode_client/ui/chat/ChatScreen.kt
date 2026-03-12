@@ -49,6 +49,7 @@ fun ChatScreen(
             currentSessionId = state.currentSessionId,
             expandedSessionIds = state.expandedSessionIds,
             agents = state.visibleAgents,
+            sessionStatuses = state.sessionStatuses,
             selectedAgent = state.selectedAgentName,
             availableModels = state.availableModels,
             selectedModelIndex = state.selectedModelIndex,

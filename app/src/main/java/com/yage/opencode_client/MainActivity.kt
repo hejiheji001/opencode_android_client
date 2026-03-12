@@ -213,6 +213,7 @@ private fun TabletLayout(viewModel: MainViewModel, repository: OpenCodeRepositor
                 SessionList(
                     sessions = state.sessions,
                     currentSessionId = state.currentSessionId,
+                    sessionStatuses = state.sessionStatuses,
                     expandedSessionIds = state.expandedSessionIds,
                     onSelectSession = { viewModel.selectSession(it) },
                     onCreateSession = { viewModel.createSession() },

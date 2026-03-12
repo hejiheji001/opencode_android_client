@@ -127,6 +127,10 @@
 - 修复新建 session 崩溃：`createSession()` 的 REST 成功回调与 `session.created` / `session.updated` SSE 事件统一改为按 `session.id` 去重 upsert，避免 SessionList 的 LazyColumn 因重复 key 崩溃
 - 新增 `MainViewModelTest` 回归用例，覆盖 create response 与 `session.created` SSE 竞态下仍只保留一个 session 条目
 - 执行验证：`./gradlew testDebugUnitTest` 通过
+- 调整 SessionList 视觉语义：标题统一改为粗体；选中态改为背景色高亮；busy session 改用前景色表达，避免把“选中”和“正在运行”混在一个颜色信号里
+- 修正 SessionList 选中态背景泄露 swipe 删除层的问题：选中背景改为不透明浅蓝白色，swipe reveal 背景从红色改成更 subtle 的浅蓝色，并进一步加强选中背景对比度
+- 删除 `docs/dev_code_review.md`，结束已完成的 code review / refactor 跟踪文档
+- 执行验证：`./gradlew testDebugUnitTest` 通过
 - 更新 PRD/RFC 标记相关功能完成
 
 ---
