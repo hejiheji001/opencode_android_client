@@ -86,3 +86,8 @@
 - Repo 公开到 GitHub（grapeot/opencode_android_client），添加 README
 - 添加 GitHub Actions CI（unit test on push/PR）
 - 版本号设为 0.1.20260312，首个 GitHub Release
+- 将 `speech_recognition.md` 的核心设计合并进 `PRD.md` 与 `RFC.md`，删除单独文档
+- 修复 Chat 输入栏：录音中允许继续发送已有文本；输入框变高时右侧操作按钮自动改为竖排
+- 修复 CI：提交 `gradle-wrapper.jar`，避免 GitHub Actions 找不到 Gradle wrapper
+- Files 新增图片预览：默认 fit-to-screen，支持双击缩放、拖动平移、系统分享
+- Chat 自动跟随改为双模式：停留在底部时跟随新内容，离开底部时保持当前位置
