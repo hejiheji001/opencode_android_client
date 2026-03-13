@@ -131,6 +131,9 @@
 - 修正 SessionList 选中态背景泄露 swipe 删除层的问题：选中背景改为不透明浅蓝白色，swipe reveal 背景从红色改成更 subtle 的浅蓝色，并进一步加强选中背景对比度
 - 修复 SessionList 滚动 UX bug：移除前端对 session tree 的 20 条本地分页与伪 “Loading more...” 提示，左侧列表现在直接滚动浏览本次 `/session` 已返回的全部 session
 - 新增 `SessionListInstrumentedTest`，验证列表可以滚动到更靠后的 session 项，防止再次引入前端裁剪
+- 对齐 iOS 增加 session 分页加载：`GET /session?limit=N` 初始请求 100 条，滚动接近底部时按 100 递增 limit（100→200→300）重新拉取更老 session，解决 sub-agent 大量占位时主 session 看起来“没加载完”的问题
+- 扩充 `SessionListInstrumentedTest` 与 `MainViewModelTest`：分别覆盖滚动到底触发 load-more、以及 ViewModel 的 session limit / hasMore 状态迁移
+- 执行验证：`./gradlew testDebugUnitTest` 与 `./gradlew assembleDebugAndroidTest` 通过
 - 删除 `docs/dev_code_review.md`，结束已完成的 code review / refactor 跟踪文档
 - 执行验证：`./gradlew testDebugUnitTest` 通过
 - 更新 PRD/RFC 标记相关功能完成

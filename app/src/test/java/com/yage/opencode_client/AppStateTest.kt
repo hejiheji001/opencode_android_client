@@ -17,6 +17,9 @@ class AppStateTest {
         assertFalse(state.isConnecting)
         assertNull(state.serverVersion)
         assertTrue(state.sessions.isEmpty())
+        assertEquals(100, state.loadedSessionLimit)
+        assertTrue(state.hasMoreSessions)
+        assertFalse(state.isLoadingMoreSessions)
         assertNull(state.currentSessionId)
         assertTrue(state.sessionStatuses.isEmpty())
         assertTrue(state.messages.isEmpty())
@@ -31,6 +34,7 @@ class AppStateTest {
         assertNull(state.error)
         assertEquals(ThemeMode.SYSTEM, state.themeMode)
         assertNull(state.filePathToShowInFiles)
+        assertTrue(state.canLoadMoreSessions)
     }
 
     @Test

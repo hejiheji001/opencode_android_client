@@ -32,6 +32,9 @@ data class AppState(
     val isConnecting: Boolean = false,
     val serverVersion: String? = null,
     val sessions: List<Session> = emptyList(),
+    val loadedSessionLimit: Int = MainViewModelTimings.sessionPageSize,
+    val hasMoreSessions: Boolean = true,
+    val isLoadingMoreSessions: Boolean = false,
     val expandedSessionIds: Set<String> = emptySet(),
     val currentSessionId: String? = null,
     val sessionStatuses: Map<String, SessionStatus> = emptyMap(),
@@ -68,6 +71,9 @@ data class AppState(
 
     val isCurrentSessionBusy: Boolean
         get() = currentSessionStatus?.isBusy == true
+
+    val canLoadMoreSessions: Boolean
+        get() = hasMoreSessions && !isLoadingMoreSessions
 
     val visibleAgents: List<AgentInfo>
         get() = agents.filter { it.isVisible }
@@ -242,6 +248,15 @@ class MainViewModel @Inject constructor(
             onSelectSession = ::selectSession,
             onLoadSessionStatus = ::loadSessionStatus,
             onLoadMessages = { sessionId -> loadMessages(sessionId) }
+        )
+    }
+
+    fun loadMoreSessions() {
+        launchLoadMoreSessions(
+            scope = viewModelScope,
+            repository = repository,
+            state = _state,
+            onSelectSession = ::selectSession
         )
     }
 

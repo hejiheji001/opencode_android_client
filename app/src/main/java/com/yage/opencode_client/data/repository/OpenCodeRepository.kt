@@ -81,7 +81,7 @@ class OpenCodeRepository @Inject constructor() {
 
     suspend fun checkHealth(): Result<HealthResponse> = runCatching { api.getHealth() }
 
-    suspend fun getSessions(): Result<List<Session>> = runCatching { api.getSessions() }
+    suspend fun getSessions(limit: Int? = null): Result<List<Session>> = runCatching { api.getSessions(limit) }
 
     suspend fun createSession(title: String? = null): Result<Session> = runCatching {
         api.createSession(CreateSessionRequest(title = title))

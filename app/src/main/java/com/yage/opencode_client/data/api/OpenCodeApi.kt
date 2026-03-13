@@ -10,7 +10,7 @@ interface OpenCodeApi {
     suspend fun getHealth(): HealthResponse
 
     @GET("session")
-    suspend fun getSessions(): List<Session>
+    suspend fun getSessions(@Query("limit") limit: Int? = null): List<Session>
 
     @POST("session")
     suspend fun createSession(@Body body: CreateSessionRequest = CreateSessionRequest()): Session

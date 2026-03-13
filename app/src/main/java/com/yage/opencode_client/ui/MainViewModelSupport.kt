@@ -10,6 +10,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import java.security.MessageDigest
 
 internal object MainViewModelTimings {
+    const val sessionPageSize = 100
     const val messageRetryDelayMs = 400L
     const val messageRefreshDelayMs = 1200L
     const val busyPollingIntervalMs = 2000L
@@ -62,6 +63,10 @@ internal fun parseSessionUpdatedEvent(event: SSEEvent): Session? {
 
 internal fun upsertSession(sessions: List<Session>, session: Session): List<Session> {
     return listOf(session) + sessions.filter { it.id != session.id }
+}
+
+internal fun nextSessionFetchLimit(current: Int, pageSize: Int = MainViewModelTimings.sessionPageSize): Int {
+    return maxOf(current, pageSize) + maxOf(pageSize, 1)
 }
 
 internal fun parseSessionStatusEvent(event: SSEEvent): SessionStatusEvent? {

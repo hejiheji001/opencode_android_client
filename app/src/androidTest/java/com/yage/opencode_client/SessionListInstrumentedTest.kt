@@ -11,6 +11,7 @@ import com.yage.opencode_client.data.model.Session
 import com.yage.opencode_client.ui.session.SessionList
 import org.junit.Rule
 import org.junit.Test
+import java.util.concurrent.atomic.AtomicInteger
 
 class SessionListInstrumentedTest {
     @get:Rule
@@ -42,5 +43,36 @@ class SessionListInstrumentedTest {
             .performScrollToNode(hasText("Session 40"))
 
         composeRule.onNodeWithText("Session 40").assertIsDisplayed()
+    }
+
+    @Test
+    fun sessionListRequestsMoreWhenScrolledNearBottom() {
+        val sessions = (1..40).map { index ->
+            Session(
+                id = "session-$index",
+                directory = "/tmp/project-$index",
+                title = "Session $index"
+            )
+        }
+        val loadMoreCalls = AtomicInteger(0)
+
+        composeRule.setContent {
+            MaterialTheme {
+                SessionList(
+                    sessions = sessions,
+                    currentSessionId = "session-1",
+                    hasMoreSessions = true,
+                    onSelectSession = {},
+                    onCreateSession = {},
+                    onDeleteSession = {},
+                    onLoadMoreSessions = { loadMoreCalls.incrementAndGet() }
+                )
+            }
+        }
+
+        composeRule.onNodeWithTag("session_list")
+            .performScrollToNode(hasText("Session 40"))
+
+        composeRule.waitUntil(timeoutMillis = 5_000) { loadMoreCalls.get() > 0 }
     }
 }

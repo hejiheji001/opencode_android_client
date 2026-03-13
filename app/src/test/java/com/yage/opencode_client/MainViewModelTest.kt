@@ -282,6 +282,81 @@ class MainViewModelTest {
     }
 
     @Test
+    fun `loadSessions requests current limit and tracks hasMore`() = runTest {
+        val sessions = (1..100).map { index ->
+            com.yage.opencode_client.data.model.Session(id = "session-$index", directory = "/tmp/$index")
+        }
+        coEvery { repository.getSessions(100) } returns Result.success(sessions)
+
+        val viewModel = createViewModel()
+
+        viewModel.loadSessions()
+        advanceUntilIdle()
+
+        coVerify { repository.getSessions(100) }
+        assertEquals(100, viewModel.state.value.loadedSessionLimit)
+        assertTrue(viewModel.state.value.hasMoreSessions)
+        assertEquals(100, viewModel.state.value.sessions.size)
+    }
+
+    @Test
+    fun `loadMoreSessions requests higher limit and replaces sessions`() = runTest {
+        val initial = (1..100).map { index ->
+            com.yage.opencode_client.data.model.Session(id = "session-$index", directory = "/tmp/$index")
+        }
+        val expanded = (1..150).map { index ->
+            com.yage.opencode_client.data.model.Session(id = "session-$index", directory = "/tmp/$index")
+        }
+        coEvery { repository.getSessions(200) } returns Result.success(expanded)
+
+        val viewModel = createViewModel()
+        updateState(viewModel) {
+            it.copy(
+                sessions = initial,
+                loadedSessionLimit = 100,
+                hasMoreSessions = true,
+                currentSessionId = "session-20"
+            )
+        }
+
+        viewModel.loadMoreSessions()
+        advanceUntilIdle()
+
+        coVerify { repository.getSessions(200) }
+        assertEquals(200, viewModel.state.value.loadedSessionLimit)
+        assertFalse(viewModel.state.value.hasMoreSessions)
+        assertEquals(150, viewModel.state.value.sessions.size)
+        assertEquals("session-20", viewModel.state.value.currentSessionId)
+    }
+
+    @Test
+    fun `loadMoreSessions ignores duplicate triggers while request is in flight`() = runTest {
+        val expanded = (1..150).map { index ->
+            com.yage.opencode_client.data.model.Session(id = "session-$index", directory = "/tmp/$index")
+        }
+        coEvery { repository.getSessions(200) } coAnswers {
+            kotlinx.coroutines.delay(100)
+            Result.success(expanded)
+        }
+
+        val viewModel = createViewModel()
+        updateState(viewModel) {
+            it.copy(
+                sessions = (1..100).map { index -> com.yage.opencode_client.data.model.Session(id = "session-$index", directory = "/tmp/$index") },
+                loadedSessionLimit = 100,
+                hasMoreSessions = true
+            )
+        }
+
+        viewModel.loadMoreSessions()
+        viewModel.loadMoreSessions()
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { repository.getSessions(200) }
+        assertEquals(200, viewModel.state.value.loadedSessionLimit)
+    }
+
+    @Test
     fun `loadMessages updates selected agent and preset model from last assistant`() = runTest {
         val preset = ModelPresets.list[2]
         val messages = listOf(

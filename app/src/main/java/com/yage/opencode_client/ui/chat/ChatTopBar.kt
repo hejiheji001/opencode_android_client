@@ -48,6 +48,8 @@ internal fun ChatTopBar(
     sessions: List<Session>,
     currentSessionId: String?,
     sessionStatuses: Map<String, SessionStatus>,
+    hasMoreSessions: Boolean,
+    isLoadingMoreSessions: Boolean,
     expandedSessionIds: Set<String> = emptySet(),
     agents: List<AgentInfo>,
     selectedAgent: String,
@@ -57,6 +59,7 @@ internal fun ChatTopBar(
     onSelectSession: (String) -> Unit,
     onCreateSession: () -> Unit,
     onDeleteSession: (String) -> Unit,
+    onLoadMoreSessions: () -> Unit,
     onToggleSessionExpanded: (String) -> Unit = {},
     onSelectAgent: (String) -> Unit,
     onSelectModel: (Int) -> Unit,
@@ -153,6 +156,8 @@ internal fun ChatTopBar(
                             sessions = sessions,
                             currentSessionId = currentSessionId,
                             sessionStatuses = sessionStatuses,
+                            hasMoreSessions = hasMoreSessions,
+                            isLoadingMoreSessions = isLoadingMoreSessions,
                             expandedSessionIds = expandedSessionIds,
                             onSelectSession = {
                                 onSelectSession(it)
@@ -166,6 +171,7 @@ internal fun ChatTopBar(
                                 onDeleteSession(it)
                                 showSessionSheet = false
                             },
+                            onLoadMoreSessions = onLoadMoreSessions,
                             onToggleSessionExpanded = onToggleSessionExpanded,
                             onOpenSettings = null
                         )

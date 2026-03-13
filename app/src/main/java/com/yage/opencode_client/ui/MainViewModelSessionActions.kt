@@ -18,9 +18,23 @@ internal fun launchLoadSessions(
     onLoadMessages: (String) -> Unit
 ) {
     scope.launch {
-        repository.getSessions()
+        val limit = MainViewModelTimings.sessionPageSize
+        state.update {
+            it.copy(
+                loadedSessionLimit = limit,
+                hasMoreSessions = true,
+                isLoadingMoreSessions = false
+            )
+        }
+        repository.getSessions(limit)
             .onSuccess { sessions ->
-                state.update { it.copy(sessions = sessions) }
+                state.update {
+                    it.copy(
+                        sessions = sessions,
+                        hasMoreSessions = sessions.size >= limit,
+                        isLoadingMoreSessions = false
+                    )
+                }
                 val currentId = state.value.currentSessionId
                 val hasCurrentSession = currentId != null && sessions.any { it.id == currentId }
                 when {
@@ -38,7 +52,65 @@ internal fun launchLoadSessions(
                 }
             }
             .onFailure { error ->
-                state.update { it.copy(error = "Failed to load sessions: ${errorMessageOrFallback(error, "unknown error")}") }
+                state.update {
+                    it.copy(
+                        isLoadingMoreSessions = false,
+                        error = "Failed to load sessions: ${errorMessageOrFallback(error, "unknown error")}"
+                    )
+                }
+            }
+    }
+}
+
+internal fun launchLoadMoreSessions(
+    scope: CoroutineScope,
+    repository: OpenCodeRepository,
+    state: MutableStateFlow<AppState>,
+    onSelectSession: (String) -> Unit
+) {
+    var nextLimit = 0
+    var shouldLaunch = false
+    state.update { current ->
+        if (!current.hasMoreSessions || current.isLoadingMoreSessions) {
+            current
+        } else {
+            nextLimit = nextSessionFetchLimit(current.loadedSessionLimit)
+            shouldLaunch = true
+            current.copy(isLoadingMoreSessions = true)
+        }
+    }
+    if (!shouldLaunch) return
+    scope.launch {
+        repository.getSessions(nextLimit)
+            .onSuccess { sessions ->
+                if (state.value.loadedSessionLimit > nextLimit) {
+                    state.update { it.copy(isLoadingMoreSessions = false) }
+                    return@onSuccess
+                }
+                state.update {
+                    it.copy(
+                        sessions = sessions,
+                        loadedSessionLimit = nextLimit,
+                        hasMoreSessions = sessions.size >= nextLimit,
+                        isLoadingMoreSessions = false
+                    )
+                }
+                val currentId = state.value.currentSessionId
+                val hasCurrentSession = currentId != null && sessions.any { it.id == currentId }
+                when {
+                    currentId == null && sessions.isNotEmpty() -> onSelectSession(sessions.first().id)
+                    hasCurrentSession -> Unit
+                    sessions.isNotEmpty() -> onSelectSession(sessions.first().id)
+                    else -> state.update { it.copy(currentSessionId = null, messages = emptyList()) }
+                }
+            }
+            .onFailure { error ->
+                state.update {
+                    it.copy(
+                        isLoadingMoreSessions = false,
+                        error = "Failed to load more sessions: ${errorMessageOrFallback(error, "unknown error")}"
+                    )
+                }
             }
     }
 }

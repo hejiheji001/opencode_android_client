@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.lerp
@@ -30,6 +31,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.yage.opencode_client.data.model.Session
 import com.yage.opencode_client.data.model.SessionStatus
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlin.math.roundToInt
 
 private enum class SwipeAnchor { Start, End }
@@ -126,11 +128,14 @@ fun SessionList(
     sessions: List<Session>,
     currentSessionId: String?,
     sessionStatuses: Map<String, SessionStatus> = emptyMap(),
+    hasMoreSessions: Boolean = false,
+    isLoadingMoreSessions: Boolean = false,
     expandedSessionIds: Set<String> = emptySet(),
     onSelectSession: (String) -> Unit,
     onCreateSession: () -> Unit,
     onDeleteSession: (String) -> Unit,
     onToggleSessionExpanded: (String) -> Unit = {},
+    onLoadMoreSessions: () -> Unit = {},
     onOpenSettings: (() -> Unit)? = null
 ) {
     val tree = remember(sessions) { buildSessionTree(sessions) }
@@ -138,6 +143,16 @@ fun SessionList(
         flattenVisibleTree(tree, expandedSessionIds)
     }
     val listState = rememberLazyListState()
+
+    LaunchedEffect(listState, visibleRows.size, hasMoreSessions, isLoadingMoreSessions) {
+        snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
+            .distinctUntilChanged()
+            .collect { lastVisible ->
+                if (lastVisible != null && hasMoreSessions && !isLoadingMoreSessions && lastVisible >= visibleRows.lastIndex - 2) {
+                    onLoadMoreSessions()
+                }
+            }
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         Surface(
@@ -215,6 +230,18 @@ fun SessionList(
                             modifier = Modifier.padding(horizontal = 12.dp),
                             color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
                         )
+                    }
+                }
+            }
+            if (isLoadingMoreSessions) {
+                item(key = "load_more_progress") {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                     }
                 }
             }
