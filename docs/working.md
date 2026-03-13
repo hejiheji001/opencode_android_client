@@ -129,6 +129,8 @@
 - 执行验证：`./gradlew testDebugUnitTest` 通过
 - 调整 SessionList 视觉语义：标题统一改为粗体；选中态改为背景色高亮；busy session 改用前景色表达，避免把“选中”和“正在运行”混在一个颜色信号里
 - 修正 SessionList 选中态背景泄露 swipe 删除层的问题：选中背景改为不透明浅蓝白色，swipe reveal 背景从红色改成更 subtle 的浅蓝色，并进一步加强选中背景对比度
+- 修复 SessionList 滚动 UX bug：移除前端对 session tree 的 20 条本地分页与伪 “Loading more...” 提示，左侧列表现在直接滚动浏览本次 `/session` 已返回的全部 session
+- 新增 `SessionListInstrumentedTest`，验证列表可以滚动到更靠后的 session 项，防止再次引入前端裁剪
 - 删除 `docs/dev_code_review.md`，结束已完成的 code review / refactor 跟踪文档
 - 执行验证：`./gradlew testDebugUnitTest` 通过
 - 更新 PRD/RFC 标记相关功能完成

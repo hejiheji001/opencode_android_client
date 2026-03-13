@@ -20,11 +20,11 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -33,8 +33,6 @@ import com.yage.opencode_client.data.model.SessionStatus
 import kotlin.math.roundToInt
 
 private enum class SwipeAnchor { Start, End }
-
-private const val SESSION_PAGE_SIZE = 20
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -139,19 +137,7 @@ fun SessionList(
     val visibleRows = remember(tree, expandedSessionIds) {
         flattenVisibleTree(tree, expandedSessionIds)
     }
-    var displayedCount by remember { mutableStateOf(SESSION_PAGE_SIZE) }
-    val rowsToShow = visibleRows.take(displayedCount)
     val listState = rememberLazyListState()
-
-    LaunchedEffect(listState) {
-        snapshotFlow {
-            listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
-        }.collect { lastVisible ->
-            if (lastVisible >= rowsToShow.size - 2 && rowsToShow.size < visibleRows.size) {
-                displayedCount = (displayedCount + SESSION_PAGE_SIZE).coerceAtMost(visibleRows.size)
-            }
-        }
-    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         Surface(
@@ -185,8 +171,9 @@ fun SessionList(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
+                .testTag("session_list")
         ) {
-            itemsIndexed(rowsToShow, key = { _, (node, _) -> node.session.id }) { index, (node, depth) ->
+            itemsIndexed(visibleRows, key = { _, (node, _) -> node.session.id }) { index, (node, depth) ->
                 val session = node.session
                 val isSelected = session.id == currentSessionId
                 val altBg = index % 2 == 1
@@ -223,26 +210,10 @@ fun SessionList(
                         isCollapsed = !isExpanded,
                         onToggleCollapse = if (hasChildren) { { onToggleSessionExpanded(session.id) } } else null
                     )
-                    if (index < rowsToShow.size - 1) {
+                    if (index < visibleRows.size - 1) {
                         HorizontalDivider(
                             modifier = Modifier.padding(horizontal = 12.dp),
                             color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                        )
-                    }
-                }
-            }
-            if (rowsToShow.size < visibleRows.size) {
-                item(key = "load_more") {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(12.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            "Loading more...",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.outline
                         )
                     }
                 }
