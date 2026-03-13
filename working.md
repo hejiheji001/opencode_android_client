@@ -2,21 +2,28 @@
 
 ## 2026-03-13
 
-完成 question 功能：参照 iOS 客户端的实现，给 Android 客户端也加上同样的功能。
+### Question 功能实现（参照 iOS 客户端）
 
-完成以下步骤:
-1. 创建 feature branch `feature/question-support`
-2. 创建数据模型文件 `Question.kt`
-3. 添加 API接口到 `OpenCodeApi.kt`
-4. 添加 repository层方法到5. 添加 SSE 事件处理到 `MainViewModelSyncActions.kt`
-6. 更新 `AppState.kt` 添加 `pendingQuestions` 字段
-7. 集成到 ChatScreen 中
+在 `feature/question-support` 分支上完成了完整的 question 功能：
 
-8. 创建 UI 组件 `QuestionCardView.kt`
-9. 添加字符串资源
+**数据层**
+- `data/model/Question.kt` — `QuestionOption`、`QuestionInfo`、`QuestionRequest` 数据模型
+- `data/api/OpenCodeApi.kt` — 3 个新端点：`GET /question`、`POST /question/{id}/reply`、`POST /question/{id}/reject`
+- `data/repository/OpenCodeRepository.kt` — `getPendingQuestions()`、`replyQuestion()`、`rejectQuestion()`
 
-10. 编写单元测试
-11. 提交 commit
+**ViewModel 层**
+- `AppState` 添加 `pendingQuestions: List<QuestionRequest>` 字段
+- `MainViewModelSupport.kt` — `parseQuestionAskedEvent()` 解析 SSE payload（读取 `properties: JsonObject`）
+- `MainViewModelSyncActions.kt` — 处理 `question.asked`、`question.replied`、`question.rejected` SSE 事件
+- `MainViewModel.kt` — `loadPendingQuestions()`、`replyQuestion()`、`rejectQuestion()` 方法
 
-12. 创建 PR
+**UI 层**
+- `ui/chat/QuestionCardView.kt` — 完整的问题卡片 Composable，支持单选/多选/自定义输入、多题分步显示、进度指示
+- `ui/chat/ChatScreen.kt` — 集成 `QuestionCardView`，过滤当前 session 的问题
 
+**测试**
+- `QuestionTest.kt` — 5 个单元测试，全部通过
+
+**构建验证**
+- `./gradlew assembleDebug` — BUILD SUCCESSFUL
+- `./gradlew testDebugUnitTest` — 5/5 tests pass, 0 failures

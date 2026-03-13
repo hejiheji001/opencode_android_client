@@ -1,22 +1,26 @@
 package com.yage.opencode_client.ui.chat
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckBox
 import androidx.compose.material.icons.filled.Help
+import androidx.compose.material.icons.filled.RadioButtonChecked
+import androidx.compose.material.icons.outlined.CheckBoxOutlineBlank
+import androidx.compose.material.icons.outlined.RadioButtonUnchecked
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import com.yage.opencode_client.R
-import com.yage.opencode_client.data.model.QuestionInfo
 import com.yage.opencode_client.data.model.QuestionOption
 import com.yage.opencode_client.data.model.QuestionRequest
 
@@ -26,28 +30,138 @@ fun QuestionCardView(
     onReply: (List<List<String>>) -> Unit,
     onReject: () -> Unit
 ) {
+    val count = question.questions.size
     var currentTab by remember { mutableIntStateOf(0) }
-    var answers by remember { mutableStateOf(List<List<String>>(initialValue = List(question.questions.size) { emptyList() })) }
-    var customTexts by remember { mutableStateOf(List(question.questions.size) { "" }) }
-    var customActive by remember { mutableStateOf(List(question.questions.size) { false }) }
+    // Per-question selected answers
+    val answers = remember {
+        mutableStateListOf<MutableList<String>>().also { list ->
+            repeat(count) { list.add(mutableStateListOf()) }
+        }
+    }
+    // Per-question custom text
+    val customTexts = remember {
+        mutableStateListOf<String>().also { list ->
+            repeat(count) { list.add("") }
+        }
+    }
+    // Per-question whether "custom" option is active
+    val customActive = remember {
+        mutableStateListOf<Boolean>().also { list ->
+            repeat(count) { list.add(false) }
+        }
+    }
     var isCustomEditing by remember { mutableStateOf(false) }
     var isSending by remember { mutableStateOf(false) }
 
     val accent = MaterialTheme.colorScheme.primary
     val cornerRadius = 12.dp
 
+    val currentQuestion = question.questions[currentTab]
+    val currentAnswers = answers[currentTab]
+    val isCustomActiveNow = customActive[currentTab]
+    val customText = customTexts[currentTab]
+
+    fun isSelected(option: QuestionOption): Boolean = currentAnswers.contains(option.label)
+
+    fun commitCustom() {
+        val text = customTexts[currentTab].trim()
+        isCustomEditing = false
+
+        if (currentQuestion.allowMultiple) {
+            val optionLabels = currentQuestion.options.map { it.label }.toSet()
+            val newAnswers: MutableList<String> = answers[currentTab]
+                .filter { optionLabels.contains(it) }
+                .toMutableList()
+            customTexts[currentTab] = text
+            if (text.isNotEmpty()) {
+                if (!newAnswers.contains(text)) newAnswers.add(text)
+                customActive[currentTab] = true
+            } else {
+                customActive[currentTab] = false
+            }
+            answers[currentTab] = newAnswers
+        } else {
+            customTexts[currentTab] = text
+            customActive[currentTab] = text.isNotEmpty()
+            answers[currentTab] = if (text.isEmpty()) mutableStateListOf() else mutableStateListOf(text)
+        }
+    }
+
+    fun selectOption(option: QuestionOption) {
+        if (currentQuestion.allowMultiple) {
+            if (currentAnswers.contains(option.label)) {
+                answers[currentTab].remove(option.label)
+            } else {
+                answers[currentTab].add(option.label)
+            }
+        } else {
+            answers[currentTab].clear()
+            answers[currentTab].add(option.label)
+            customActive[currentTab] = false
+        }
+    }
+
+    fun activateCustom() {
+        customActive[currentTab] = true
+        isCustomEditing = true
+        if (!currentQuestion.allowMultiple) {
+            answers[currentTab].clear()
+        }
+    }
+
+    fun commitCustomIfNeeded() {
+        if (customActive[currentTab] || isCustomEditing) {
+            commitCustom()
+        }
+    }
+
+    fun canProceed(): Boolean {
+        return answers[currentTab].isNotEmpty() ||
+                (customActive[currentTab] && customTexts[currentTab].isNotBlank())
+    }
+
+    fun hasAnswer(index: Int): Boolean {
+        return answers[index].isNotEmpty() ||
+                (customActive[index] && customTexts[index].isNotBlank())
+    }
+
+    fun back() {
+        commitCustomIfNeeded()
+        if (currentTab > 0) {
+            currentTab--
+            isCustomEditing = false
+        }
+    }
+
+    fun submit() {
+        if (isSending) return
+        isSending = true
+        onReply(answers.map { it.toList() })
+    }
+
+    fun next() {
+        commitCustomIfNeeded()
+        if (currentTab >= question.questions.size - 1) {
+            submit()
+        } else {
+            currentTab++
+            isCustomEditing = false
+        }
+    }
+
     Card(
         modifier = Modifier
-            .fillMaxSize()
-            .background(accent.copy(alpha = 0.07f))
-            .padding(16.dp),
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
         shape = RoundedCornerShape(cornerRadius),
         colors = CardDefaults.cardColors(
             containerColor = accent.copy(alpha = 0.07f)
         )
     ) {
         Column(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             // Header
@@ -74,7 +188,7 @@ fun QuestionCardView(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            
+
             // Progress dots
             if (question.questions.size > 1) {
                 Row(
@@ -82,11 +196,16 @@ fun QuestionCardView(
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     repeat(question.questions.size) { index ->
+                        val dotColor: Color = when {
+                            index == currentTab -> accent
+                            hasAnswer(index) -> accent.copy(alpha = 0.5f)
+                            else -> MaterialTheme.colorScheme.surfaceVariant
+                        }
                         Box(
                             modifier = Modifier
                                 .size(8.dp)
-                                .background(dotColor(index))
-                                .clip(RoundedCornerShape(4.dp))
+                                .clip(CircleShape)
+                                .background(dotColor)
                         )
                     }
                 }
@@ -108,28 +227,86 @@ fun QuestionCardView(
             // Options
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 currentQuestion.options.forEach { option ->
-                    OptionRow(
-                        option = option,
-                        selected = isSelected(option),
-                        multiple = currentQuestion.allowMultiple,
-                        accent = accent,
-                        onClick = { selectOption(option) }
-                    )
+                    val selected = isSelected(option)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(if (selected) accent.copy(alpha = 0.08f) else Color.Transparent)
+                            .clickable { selectOption(option) }
+                            .padding(vertical = 10.dp, horizontal = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = if (selected) {
+                                if (currentQuestion.allowMultiple) Icons.Filled.CheckBox else Icons.Filled.RadioButtonChecked
+                            } else {
+                                if (currentQuestion.allowMultiple) Icons.Outlined.CheckBoxOutlineBlank else Icons.Outlined.RadioButtonUnchecked
+                            },
+                            contentDescription = null,
+                            tint = if (selected) accent else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = option.label,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = if (selected) accent else MaterialTheme.colorScheme.onSurface
+                            )
+                            if (option.description.isNotEmpty()) {
+                                Text(
+                                    text = option.description,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
                 }
 
-                // Custom input
+                // Custom input option
                 if (currentQuestion.allowCustom) {
-                    CustomInputSection(
-                        isActive = isCustomActive,
-                        customText = customTexts[currentTab],
-                        accent = accent,
-                        onToggle = { activateCustom() },
-                        onTextChange = { customTexts = customTexts.toMutableList().also { customTexts[currentTab] = it } },
-                        onCommit = { commitCustom() }
-                    )
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(if (isCustomActiveNow) accent.copy(alpha = 0.08f) else Color.Transparent)
+                                .clickable { activateCustom() }
+                                .padding(vertical = 10.dp, horizontal = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = if (isCustomActiveNow) Icons.Filled.CheckBox else Icons.Outlined.CheckBoxOutlineBlank,
+                                contentDescription = null,
+                                tint = if (isCustomActiveNow) accent else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = "Type your own answer",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = if (isCustomActiveNow) accent else MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+
+                        if (isCustomActiveNow) {
+                            Spacer(modifier = Modifier.height(6.dp))
+                            OutlinedTextField(
+                                value = customText,
+                                onValueChange = { customTexts[currentTab] = it },
+                                label = { Text("Type your answer...") },
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                                keyboardActions = KeyboardActions(onDone = { commitCustom() }),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
                 }
             }
 
@@ -144,7 +321,7 @@ fun QuestionCardView(
                 ) {
                     Text("Dismiss")
                 }
-                
+
                 if (currentTab > 0) {
                     OutlinedButton(
                         onClick = { back() },
@@ -156,237 +333,20 @@ fun QuestionCardView(
 
                 Button(
                     onClick = { next() },
-                    enabled = canProceed && !isSending,
+                    enabled = canProceed() && !isSending,
                     modifier = Modifier.weight(1f)
                 ) {
                     if (isSending) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(16.dp),
-                        strokeWidth = 2.dp,
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                } else {
-                    Text(if (currentTab >= question.questions.size - 1) "Submit" else "Next")
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    } else {
+                        Text(if (currentTab >= question.questions.size - 1) "Submit" else "Next")
+                    }
                 }
             }
-        }
-    }
-
-    @Composable
-    private fun OptionRow(
-        option: QuestionOption,
-        selected: Boolean,
-        multiple: Boolean,
-        accent: Color,
-        onClick: () -> Unit
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { onClick() }
-                .background(if (selected) accent.copy(alpha = 0.08f) else Color.Transparent)
-                .padding(vertical = 12.dp, horizontal = 16.dp)
-                .clip(RoundedCornerShape(8.dp)),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = if (selected) {
-                    if (multiple) Icons.Filled.CheckBox else Icons.Filled.RadioButton
-                } else {
-                    if (multiple) Icons.Filled.CheckBox else Icons.Filled.RadioButton
-                },
-                contentDescription = null,
-                tint = if (selected) accent else MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(10.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = option.label,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (selected) accent else MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = option.description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-    }
-
-    @Composable
-    private fun CustomInputSection(
-        isActive: Boolean,
-        customText: String,
-        accent: Color,
-        onToggle: () -> Unit,
-        onTextChange: (String) -> Unit,
-        onCommit: () -> Unit
-    ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onToggle() }
-                    .background(if (isActive) accent.copy(alpha = 0.08f) else Color.Transparent)
-                    .padding(vertical = 12.dp, horizontal = 16.dp)
-                    .clip(RoundedCornerShape(8.dp)),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = if (isActive) Icons.Filled.CheckBox else Icons.Filled.CheckBox,
-                    contentDescription = null,
-                    tint = if (isActive) accent else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(10.dp))
-                Text(
-                    text = "Type your own answer",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (isActive) accent else MaterialTheme.colorScheme.onSurface
-                )
-            }
-
-            
-            if (isActive) {
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = customText,
-                    onValueChange = onTextChange,
-                    onKeyboardActions = { 
-                        onDone = { onCommit() }
-                    },
-                    label = { Text("Type your answer...") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        }
-    }
-
-    private val currentQuestion: QuestionInfo
-        get() = question.questions.getOrElseOrNull {
-            question.questions[currentTab]
-        }
-
-    
-    private val canProceed: Boolean
-        get() {
-            if (answers[currentTab].isNotEmpty()) {
-                return true
-            }
-            return isCustomActive && customText.isNotBlank().isNotEmpty()
-        }
-
-    
-    private fun isSelected(option: QuestionOption): Boolean {
-        return answers[currentTab].contains(option.label)
-    }
-
-    
-    private fun selectOption(option: QuestionOption) {
-        val currentAnswers = answers.toMutableList()
-        if (currentQuestion.allowMultiple) {
-            if (currentAnswers.contains(option.label)) {
-                currentAnswers.remove(option.label)
-            } else {
-                currentAnswers.add(option.label)
-            }
-        } else {
-            currentAnswers.clear()
-            currentAnswers.add(option.label)
-            customActive = false
-        }
-    }
-
-    
-    private fun activateCustom() {
-        customActive = true
-        isCustomEditing = true
-        if (!currentQuestion.allowMultiple) {
-            answers[currentTab] = mutableListOf<String>().apply { it.clear() }
-        }
-    }
-
-    
-    private fun commitCustom() {
-        val text = customText.trim()
-        isCustomEditing = false
-        
-        if (currentQuestion.allowMultiple) {
-            val optionLabels = currentQuestion.options.map { it.label }.toSet()
-            val newAnswers = answers[currentTab].toMutableList()
-            newAnswers.removeAll { !optionLabels.contains(it) }
-            customTexts[currentTab] = text
-            if (text.isNotEmpty()) {
-                if (!newAnswers.contains(text)) {
-                    newAnswers.add(text)
-                }
-            } else {
-                customActive = false
-            }
-            answers[currentTab] = newAnswers
-        } else {
-            customTexts[currentTab] = text
-            customActive = text.isNotEmpty()
-            answers[currentTab] = if (text.isEmpty()) mutableListOf() else mutableListOf(text)
-        }
-    }
-
-    
-    private fun next() {
-        commitCustomIfNeeded()
-        if (currentTab >= question.questions.size - 1) {
-            submit()
-        } else {
-            currentTab++
-            isCustomEditing = false
-        }
-    }
-
-    
-    private fun back() {
-        commitCustomIfNeeded()
-        if (currentTab > 0) {
-            currentTab--
-            isCustomEditing = false
-        }
-    }
-
-    
-    private fun submit() {
-        if (isSending) return
-        isSending = true
-        onReply(answers)
-    }
-
-    
-    private fun commitCustomIfNeeded() {
-        if (isCustomActive || isCustomEditing) {
-            commitCustom()
-        }
-    }
-
-    
-    private fun hasAnswer(): Boolean {
-        return answers[currentTab].isNotEmpty() || 
-               (customActive && customText.isNotBlank().isNotEmpty())
-    }
-
-    
-    private fun trimmedCustomText(): String {
-        return customText.trim()
-    }
-
-    
-    private fun dotColor(index: Int): Color {
-        return when (index == currentTab) {
-            accent
-        } else if (hasAnswer(index)) {
-            accent.copy(alpha = 0.5f)
-        } else {
-            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
         }
     }
 }

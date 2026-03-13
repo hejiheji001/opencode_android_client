@@ -97,8 +97,9 @@ internal fun parseMessagePartDeltaEvent(event: SSEEvent): MessagePartDeltaEvent?
 }
 
 internal fun parseQuestionAskedEvent(event: SSEEvent): QuestionRequest? {
+    val properties = event.payload.properties ?: return null
     return runCatching {
-        Json.decodeFromString<QuestionRequest>(event.payload.toString())
+        Json.decodeFromString<QuestionRequest>(properties.toString())
     }.getOrNull()
 }
 

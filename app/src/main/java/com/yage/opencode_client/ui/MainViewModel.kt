@@ -46,6 +46,7 @@ data class AppState(
     val selectedModelIndex: Int = 0,
     val providers: ProvidersResponse? = null,
     val pendingPermissions: List<PermissionRequest> = emptyList(),
+    val pendingQuestions: List<QuestionRequest> = emptyList(),
     val inputText: String = "",
     val error: String? = null,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
@@ -394,6 +395,7 @@ class MainViewModel @Inject constructor(
             repository.getPendingPermissions()
                 .onSuccess { permissions ->
                     _state.update { it.copy(pendingPermissions = permissions) }
+                }
                 .onFailure { error ->
                     Log.w(TAG, "Failed to load permissions: ${error.message}")
                 }
@@ -405,6 +407,7 @@ class MainViewModel @Inject constructor(
             repository.getPendingQuestions()
                 .onSuccess { questions ->
                     _state.update { it.copy(pendingQuestions = questions) }
+                }
                 .onFailure { error ->
                     Log.w(TAG, "Failed to load questions: ${error.message}")
                 }
@@ -468,7 +471,6 @@ class MainViewModel @Inject constructor(
             event = event,
             onRefreshMessages = ::loadMessagesWithRetry,
             onLoadPendingPermissions = ::loadPendingPermissions,
-            onLoadPendingQuestions = ::loadPendingQuestions,
             onNonFatalIssue = { message -> reportNonFatalIssue(TAG, message) }
         )
     }

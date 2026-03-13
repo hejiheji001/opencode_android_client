@@ -150,5 +150,16 @@ fun ChatScreen(
                 }
             )
         }
+
+        state.pendingQuestions
+            .filter { it.sessionId == state.currentSessionId }
+            .firstOrNull()
+            ?.let { question ->
+                QuestionCardView(
+                    question = question,
+                    onReply = { answers -> viewModel.replyQuestion(question.id, answers) },
+                    onReject = { viewModel.rejectQuestion(question.id) }
+                )
+            }
     }
 }
