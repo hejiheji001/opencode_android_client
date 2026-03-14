@@ -94,7 +94,12 @@ fun ChatScreen(
                     isLoading = state.isLoadingMessages,
                     messageLimit = state.messageLimit,
                     onLoadMore = { viewModel.loadMoreMessages() },
-                    onFileClick = onNavigateToFiles
+                    onFileClick = onNavigateToFiles,
+                    onForkFromMessage = { messageId ->
+                        state.currentSessionId?.let { sessionId ->
+                            viewModel.forkSession(sessionId, messageId)
+                        }
+                    }
                 )
             }
 

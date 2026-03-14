@@ -17,10 +17,12 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.CallSplit
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
@@ -28,6 +30,8 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
@@ -66,7 +70,8 @@ internal fun ChatMessageList(
     isLoading: Boolean,
     messageLimit: Int,
     onLoadMore: () -> Unit,
-    onFileClick: (String) -> Unit
+    onFileClick: (String) -> Unit,
+    onForkFromMessage: (String) -> Unit
 ) {
     val listState = rememberLazyListState()
     val layoutInfo = listState.layoutInfo
@@ -133,7 +138,8 @@ internal fun ChatMessageList(
             MessageRow(
                 message = message,
                 streamingPartTexts = streamingPartTexts,
-                onFileClick = onFileClick
+                onFileClick = onFileClick,
+                onForkFromMessage = onForkFromMessage
             )
         }
         if (isLoading && messages.size >= messageLimit) {
@@ -167,7 +173,8 @@ internal fun ChatMessageList(
 private fun MessageRow(
     message: MessageWithParts,
     streamingPartTexts: Map<String, String>,
-    onFileClick: (String) -> Unit
+    onFileClick: (String) -> Unit,
+    onForkFromMessage: (String) -> Unit
 ) {
     val isUser = message.info.isUser
 
@@ -211,13 +218,50 @@ private fun MessageRow(
             }
         }
         if (!isUser) {
-            message.info.resolvedModel?.let { model ->
-                Text(
-                    text = "${model.providerId}/${model.modelId}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                    modifier = Modifier.padding(start = 4.dp, top = 2.dp)
-                )
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(start = 4.dp, top = 2.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                message.info.resolvedModel?.let { model ->
+                    Text(
+                        text = "${model.providerId}/${model.modelId}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                    )
+                }
+                Spacer(modifier = Modifier.weight(1f))
+                Box {
+                    var showMenu by remember { mutableStateOf(false) }
+                    IconButton(
+                        onClick = { showMenu = true },
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = "More options",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = showMenu,
+                        onDismissRequest = { showMenu = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Fork from here") },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.CallSplit,
+                                    contentDescription = null
+                                )
+                            },
+                            onClick = {
+                                showMenu = false
+                                onForkFromMessage(message.info.id)
+                            }
+                        )
+                    }
+                }
             }
         }
     }
