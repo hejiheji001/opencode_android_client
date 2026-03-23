@@ -21,14 +21,12 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yage.opencode_client.data.audio.AIBuildersAudioClient
-import com.yage.opencode_client.data.repository.OpenCodeRepository
 import com.yage.opencode_client.ui.MainViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(
     viewModel: MainViewModel,
-    repository: OpenCodeRepository,
     onNavigateToFiles: (String) -> Unit = {},
     onNavigateToSettings: () -> Unit = {},
     showSettingsButton: Boolean = true,
@@ -54,32 +52,37 @@ fun ChatScreen(
 
     Column(modifier = Modifier.fillMaxSize()) {
         ChatTopBar(
-            sessions = state.sessions,
-            currentSessionId = state.currentSessionId,
-            expandedSessionIds = state.expandedSessionIds,
-            agents = state.visibleAgents,
-            sessionStatuses = state.sessionStatuses,
-            hasMoreSessions = state.hasMoreSessions,
-            isLoadingMoreSessions = state.isLoadingMoreSessions,
-            selectedAgent = state.selectedAgentName,
-            availableModels = state.availableModels,
-            selectedModelIndex = state.selectedModelIndex,
-            contextUsage = cachedContextUsage,
-            onSelectSession = viewModel::selectSession,
-            onCreateSession = { viewModel.createSession() },
-            onDeleteSession = viewModel::deleteSession,
-            onLoadMoreSessions = viewModel::loadMoreSessions,
-            onToggleSessionExpanded = viewModel::toggleSessionExpanded,
-            onSelectAgent = viewModel::selectAgent,
-            onSelectModel = viewModel::selectModel,
-            onNavigateToSettings = onNavigateToSettings,
-            showSettingsButton = showSettingsButton,
-            showNewSessionInTopBar = showNewSessionInTopBar,
-            showSessionListInTopBar = showSessionListInTopBar,
-            onRenameSession = { title ->
-                val sessionId = state.currentSessionId ?: return@ChatTopBar
-                viewModel.updateSessionTitle(sessionId, title)
-            }
+            state = ChatTopBarState(
+                sessions = state.sessions,
+                currentSessionId = state.currentSessionId,
+                sessionStatuses = state.sessionStatuses,
+                hasMoreSessions = state.hasMoreSessions,
+                isLoadingMoreSessions = state.isLoadingMoreSessions,
+                expandedSessionIds = state.expandedSessionIds,
+                agents = state.visibleAgents,
+                selectedAgent = state.selectedAgentName,
+                availableModels = state.availableModels,
+                selectedModelIndex = state.selectedModelIndex,
+                contextUsage = cachedContextUsage,
+                showSettingsButton = showSettingsButton,
+                showNewSessionInTopBar = showNewSessionInTopBar,
+                showSessionListInTopBar = showSessionListInTopBar
+            ),
+            actions = ChatTopBarActions(
+                onSelectSession = viewModel::selectSession,
+                onCreateSession = viewModel::createSession,
+                onDeleteSession = viewModel::deleteSession,
+                onLoadMoreSessions = viewModel::loadMoreSessions,
+                onToggleSessionExpanded = viewModel::toggleSessionExpanded,
+                onSelectAgent = viewModel::selectAgent,
+                onSelectModel = viewModel::selectModel,
+                onNavigateToSettings = onNavigateToSettings,
+                onRenameSession = { title ->
+                    state.currentSessionId?.let { sessionId ->
+                        viewModel.updateSessionTitle(sessionId, title)
+                    }
+                }
+            )
         )
 
         Box(modifier = Modifier.weight(1f)) {
@@ -95,7 +98,7 @@ fun ChatScreen(
                     streamingReasoningPart = state.streamingReasoningPart,
                     isLoading = state.isLoadingMessages,
                     messageLimit = state.messageLimit,
-                    repository = repository,
+                    repository = viewModel.repository,
                     workspaceDirectory = state.currentSession?.directory,
                     onLoadMore = { viewModel.loadMoreMessages() },
                     onFileClick = onNavigateToFiles,
