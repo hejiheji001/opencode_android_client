@@ -218,9 +218,19 @@ data class AppState(
     val visibleAgents: List<AgentInfo>
         get() = agents.filter { it.isVisible }
 
-    /** Curated model list (filtered like iOS), not the full API response. */
     val availableModels: List<ModelOption>
-        get() = ModelPresets.list
+        get() {
+            val serverModels = providers?.providers?.flatMap { provider ->
+                provider.models.map { (_, model) ->
+                    ModelOption(
+                        displayName = model.name ?: model.id,
+                        providerId = provider.id,
+                        modelId = model.id
+                    )
+                }
+            }
+            return if (!serverModels.isNullOrEmpty()) serverModels else ModelPresets.list
+        }
 
     private val providerModelsIndex: Map<String, ProviderModel>
         get() = providers?.providers?.flatMap { provider ->
@@ -517,7 +527,8 @@ class MainViewModel @Inject constructor(
     }
 
     fun selectModel(index: Int) {
-        val clamped = index.coerceIn(0, ModelPresets.list.size - 1)
+        val models = _state.value.availableModels
+        val clamped = index.coerceIn(0, (models.size - 1).coerceAtLeast(0))
         settingsManager.selectedModelIndex = clamped
         _state.update { it.copy(selectedModelIndex = clamped) }
         _state.value.currentSessionId?.let { settingsManager.setModelForSession(it, clamped) }
