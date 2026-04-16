@@ -8,6 +8,9 @@ on:
     branches: [master]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -39,15 +42,46 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: ./gradlew assembleRelease
 
-      - name: Upload release APK
+      - name: Rename release APK
+        if: env.KEYSTORE_BASE64 != ''
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          mv app/build/outputs/apk/release/*.apk app/build/outputs/apk/release/opencode-client-release.apk
+
+      - name: Upload release APK artifact
         if: env.KEYSTORE_BASE64 != ''
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         uses: actions/upload-artifact@v4
         with:
           name: opencode-client-release
-          path: app/build/outputs/apk/release/*.apk
+          path: app/build/outputs/apk/release/opencode-client-release.apk
           retention-days: 90
+
+      - name: Publish to latest release
+        if: env.KEYSTORE_BASE64 != '' && github.ref == 'refs/heads/master' && github.event_name == 'push'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release delete latest --yes || true
+          gh release create latest \
+            --title "Latest Build" \
+            --notes "Auto-built from master ($(date -u '+%Y-%m-%d %H:%M UTC'))" \
+            --prerelease \
+            app/build/outputs/apk/release/opencode-client-release.apk
+
+      - name: Publish tagged release
+        if: env.KEYSTORE_BASE64 != '' && startsWith(github.ref, 'refs/tags/v')
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --title "${{ github.ref_name }}" \
+            --generate-notes \
+            app/build/outputs/apk/release/opencode-client-release.apk
 
       - name: Build debug APK (fallback when no keystore)
         if: env.KEYSTORE_BASE64 == ''
