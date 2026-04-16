@@ -3,9 +3,10 @@
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
 # Kotlinx Serialization - keep @Serializable class names for reflection
--keepattributes *Annotation*, InnerClasses
+-keepattributes Signature, *Annotation*, InnerClasses
 -dontwarn kotlinx.serialization.**
 -keep,includedescriptorclasses class com.yage.opencode_client.data.model.** { *; }
+-keep,includedescriptorclasses class com.yage.opencode_client.data.api.** { *; }
 
 # EncryptedSharedPreferences / Tink - errorprone annotations are compile-only
 -dontwarn com.google.errorprone.annotations.**
