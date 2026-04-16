@@ -20,7 +20,8 @@ internal fun applySavedSettings(
     )
 
     val savedModelIndex = settingsManager.selectedModelIndex
-    val clampedModelIndex = savedModelIndex.coerceIn(0, ModelPresets.list.size - 1)
+    val maxIndex = (ModelPresets.list.size - 1).coerceAtLeast(0)
+    val clampedModelIndex = savedModelIndex.coerceIn(0, maxIndex)
     if (clampedModelIndex != savedModelIndex) {
         settingsManager.selectedModelIndex = clampedModelIndex
     }

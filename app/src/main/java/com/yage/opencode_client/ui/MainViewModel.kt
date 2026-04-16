@@ -62,7 +62,12 @@ data class AppState(
     val aiBuilderConnectionError: String? = null,
     val isTestingAIBuilderConnection: Boolean = false
 ) {
-    data class ModelOption(val displayName: String, val providerId: String, val modelId: String) {
+    data class ModelOption(
+        val displayName: String,
+        val providerId: String,
+        val modelId: String,
+        val isFromServer: Boolean = false
+    ) {
         val shortName: String
             get() = when {
                 "Opus" in displayName -> "Opus"
@@ -225,11 +230,18 @@ data class AppState(
                     ModelOption(
                         displayName = model.name ?: model.id,
                         providerId = provider.id,
-                        modelId = model.id
+                        modelId = model.id,
+                        isFromServer = true
                     )
                 }
+            }.orEmpty()
+
+            val serverKeys = serverModels.map { "${it.providerId}/${it.modelId}" }.toSet()
+            val presetExtras = ModelPresets.list.filter { preset ->
+                "${preset.providerId}/${preset.modelId}" !in serverKeys
             }
-            return if (!serverModels.isNullOrEmpty()) serverModels else ModelPresets.list
+            val merged = serverModels + presetExtras
+            return merged.ifEmpty { ModelPresets.list }
         }
 
     private val providerModelsIndex: Map<String, ProviderModel>

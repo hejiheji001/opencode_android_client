@@ -216,14 +216,16 @@ internal fun ChatTopBar(
                                 )
                             }
                             state.availableModels.forEachIndexed { index, model ->
+                                val textColor = when {
+                                    index == state.selectedModelIndex -> MaterialTheme.colorScheme.primary
+                                    model.isFromServer -> Color(0xFF4CAF50)
+                                    else -> MaterialTheme.colorScheme.onSurface
+                                }
                                 DropdownMenuItem(
                                     text = {
                                         Text(
                                             model.displayName,
-                                            color = if (index == state.selectedModelIndex)
-                                                MaterialTheme.colorScheme.primary
-                                            else
-                                                MaterialTheme.colorScheme.onSurface
+                                            color = textColor
                                         )
                                     },
                                     onClick = {
